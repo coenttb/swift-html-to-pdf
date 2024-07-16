@@ -27,7 +27,7 @@ extension [String] {
         processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
     ) async throws {
         try await self.enumerated()
-            .map { index, html in
+            .map { (index, html) in
                 Document(
                     url: directory
                         .appendingPathComponent(filename(index))
@@ -36,7 +36,6 @@ extension [String] {
                 )
             }
             .print(
-                to: directory,
                 configuration: configuration,
                 processorCount: processorCount
             )
@@ -62,7 +61,7 @@ extension [Document] {
     ///   - processorCount: In allmost all circumstances you can omit this parameter.
     ///
     public func print(
-        to directory: URL,
+//        to directory: URL,
         configuration: PDFConfiguration,
         processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
     ) async throws {
@@ -97,11 +96,36 @@ extension [Document] {
     }
 }
 
-public struct PDFConfiguration: Sendable {
-    let paperSize: CGRect
-    let margins: NSEdgeInsets
+public struct EdgeInsets: Sendable {
+    let top: CGFloat
+    let left: CGFloat
+    let bottom: CGFloat
+    let right: CGFloat
     
-    var rect: CGRect {
+    public init(top: CGFloat, left: CGFloat, bottom: CGFloat, right: CGFloat) {
+        self.top = top
+        self.left = left
+        self.bottom = bottom
+        self.right = right
+    }
+}
+
+extension EdgeInsets {
+    public static var a4: EdgeInsets {
+        EdgeInsets(
+            top: -36,
+            left: -36,
+            bottom: -36,
+            right: -36
+        )
+    }
+}
+
+public struct PDFConfiguration: Sendable {
+    let paperSize: CGSize
+    let margins: EdgeInsets
+    
+    var printableRect: CGRect {
         let pageWidth: CGFloat = paperSize.width
         let pageHeight: CGFloat = paperSize.height
         let printableWidth = pageWidth - margins.left - margins.right
@@ -117,72 +141,23 @@ public struct PDFConfiguration: Sendable {
 }
 
 extension PDFConfiguration {
-    public static let a4: PDFConfiguration = .a4(margins: .a4)
-}
-
-extension WKPDFConfiguration {
-    public convenience init(
-        configuration: PDFConfiguration
-    ){
-        self.init()
-        self.rect = configuration.rect
+    public static var a4: PDFConfiguration {
+        .a4(margins: .a4)
     }
 }
 
-class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
-    let window: NSWindow
-    private let outputURL: URL
-    var onFinished: (@Sendable () -> Void)?
-    
-    private let configuration: PDFConfiguration
-    
-    init(
-        window: NSWindow,
-        outputURL: URL,
-        configuration: PDFConfiguration
-    ) {
-        self.window = window
-        self.outputURL = outputURL
-        self.configuration = configuration
-    }
-    
-    @objc func printOperationDidRun(_ printOperation: NSPrintOperation, success: Bool, contextInfo: UnsafeMutableRawPointer?) {
-        if let onFinished {
-            onFinished()
-        }
-    }
-    
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        Task { @MainActor [window, configuration, outputURL, onFinished] in
-            
-            webView.frame = configuration.paperSize
+//extension WKPDFConfiguration {
+//    public convenience init(
+//        configuration: PDFConfiguration
+//    ){
+//        self.init()
+//        self.rect = configuration.printableRect
+//    }
+//}
 
-            let printOperation = webView.printOperation(with: .pdf(url: outputURL))
-                       
-            printOperation.showsPrintPanel = false
-            printOperation.showsProgressPanel = false
-            printOperation.runModal(for: window, delegate: PrintDelegate.init(onFinished: onFinished), didRun: #selector(printOperationDidRun(_:success:contextInfo:)), contextInfo: nil)
-            
-        }
-    }
-}
 
-class PrintDelegate {
-    
-    var onFinished: (@Sendable () -> Void)?
-    
-    init(onFinished: (@Sendable () -> Void)? = nil) {
-        self.onFinished = onFinished
-    }
-    
-    @objc func printOperationDidRun(_ printOperation: NSPrintOperation, success: Bool, contextInfo: UnsafeMutableRawPointer?) {
-        if let onFinished {
-            print("printOperationDidRun.success", success)
-            print("printOperationDidRun.printOperation", printOperation)
-            onFinished()
-        }
-    }
-}
+
+
 
 public struct Document: Sendable {
     let url: URL

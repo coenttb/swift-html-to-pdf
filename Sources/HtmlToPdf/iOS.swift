@@ -8,6 +8,7 @@
 #if os(iOS)
 
 import Foundation
+import UIKit
 import WebKit
 
 extension String {
@@ -48,32 +49,50 @@ extension String {
         configuration: PDFConfiguration = .a4,
         using webView: WKWebView = WKWebView(frame: .zero)
     ) async throws {
-        let tempHTMLFileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("html")
+        let html = self
+
+        let renderer = UIPrintPageRenderer.init()
         
+        let printFormatter = UIMarkupTextPrintFormatter(markupText: html)
+        //    let printFormatter = UISimpleTextPrintFormatter(attributedText: attributedString)
+
+        //    let renderer = UIPrintPageRenderer()
+        renderer.addPrintFormatter(printFormatter, startingAtPageAt: 0)
+        // A4 size
+        let pageSize = CGSize(width: 595.2, height: 841.8)
+
+        // Use this to get US Letter size instead
+        // let pageSize = CGSize(width: 612, height: 792)
+
+        // create some sensible margins
+        let pageMargins = UIEdgeInsets(top: 72, left: 72, bottom: 72, right: 72)
+
+        // calculate the printable rect from the above two
+        let printableRect = CGRect(x: pageMargins.left, y: pageMargins.top, width: pageSize.width - pageMargins.left - pageMargins.right, height: pageSize.height - pageMargins.top - pageMargins.bottom)
+
+        // and here's the overall paper rectangle
+        let paperRect = CGRect(x: 0, y: 0, width: pageSize.width, height: pageSize.height)
+
+        renderer.setValue(NSValue(cgRect: paperRect), forKey: "paperRect")
+        renderer.setValue(NSValue(cgRect: printableRect), forKey: "printableRect")
+
+        let pdfData = NSMutableData()
+        UIGraphicsBeginPDFContextToData(pdfData, paperRect, nil)
+        renderer.prepare(forDrawingPages: NSRange(location: 0, length: renderer.numberOfPages))
+
+        let bounds = UIGraphicsGetPDFContextBounds()
+
+        for i in 0..<renderer.numberOfPages {
+            UIGraphicsBeginPDFPage()
+            renderer.drawPage(at: i, in: bounds)
+        }
+
+        UIGraphicsEndPDFContext()
+
         do {
-            try self.write(to: tempHTMLFileURL, atomically: true, encoding: .utf8)
+            try pdfData.write(to: url)
         } catch {
-            throw error
-        }
-        
-        defer {
-            try? FileManager.default.removeItem(at: tempHTMLFileURL)
-        }
-        
-        let request = URLRequest(url: tempHTMLFileURL)
-        
-        let webViewNavigationDelegate = WebViewNavigationDelegate(
-            outputURL: url,
-            configuration: configuration
-        )
-        
-        webView.navigationDelegate = webViewNavigationDelegate
-        webView.load(request)
-        
-        await withCheckedContinuation { continuation in
-            webViewNavigationDelegate.onFinished = {
-                continuation.resume()
-            }
+            Swift.print(error.localizedDescription)
         }
     }
 }
@@ -88,26 +107,40 @@ extension UIEdgeInsets {
 }
 
 extension PDFConfiguration {
-    public static func a4(margins: UIEdgeInsets = .a4) -> PDFConfiguration {
-        
-        let pageWidth: CGFloat = 595.22
-        let pageHeight: CGFloat = 841.85
-        let printableWidth = pageWidth - margins.left - margins.right
-        let printableHeight = pageHeight - margins.top - margins.bottom
-        
-        let rect = CGRect(
-            x: margins.left,
-            y: margins.top,
-            width: printableWidth,
-            height: printableHeight
-        )
-        
-        return .init(rect: rect)
+    public static func a4(margins: EdgeInsets = .a4) -> PDFConfiguration {
+//        
+//        let pageWidth: CGFloat = 595.22
+//        let pageHeight: CGFloat = 841.85
+//        let printableWidth = pageWidth - margins.left - margins.right
+//        let printableHeight = pageHeight - margins.top - margins.bottom
+//        
+//        let rect = CGRect(
+//            x: margins.left,
+//            y: margins.top,
+//            width: printableWidth,
+//            height: printableHeight
+//        )
+//        
+        return .init(paperSize: .paperSize, margins: margins)
     }
 }
 
-extension CGRect {
-    static let paperSize: CGRect = CGRect(x: 0, y: 0, width: PrintInfo.shared.paperSize.width, height: PrintInfo.shared.paperSize.height)
+extension CGSize {
+    static let paperSize: CGSize = CGSize(width: 595.22, height: 841.85)
+}
+
+
+extension UIEdgeInsets {
+    init(
+        edgeInsets: EdgeInsets
+    ){
+        self = .init(
+            top: .init(edgeInsets.top),
+            left: .init(edgeInsets.left),
+            bottom: .init(edgeInsets.bottom),
+            right: .init(edgeInsets.right)
+        )
+    }
 }
 
 #endif
