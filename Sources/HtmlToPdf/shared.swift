@@ -22,7 +22,7 @@ extension [String] {
     ///
     public func print(
         to directory: URL,
-        configuration: PDFConfiguration,
+        configuration: PDFConfiguration = .a4,
         filename: (Int) -> String = { index in "\(index + 1)" },
         processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
     ) async throws {
@@ -69,6 +69,7 @@ extension EdgeInsets {
 }
 
 public struct PDFConfiguration: Sendable {
+    let baseURL: URL?
     let paperSize: CGSize
     let margins: EdgeInsets
     
@@ -87,11 +88,13 @@ public struct PDFConfiguration: Sendable {
     }
     
     public init(
+        margins: EdgeInsets,
         paperSize: CGSize = .paperSize(),
-        margins: EdgeInsets
+        baseURL: URL? = nil
     ) {
         self.paperSize = paperSize
         self.margins = margins
+        self.baseURL = baseURL
     }
 }
 

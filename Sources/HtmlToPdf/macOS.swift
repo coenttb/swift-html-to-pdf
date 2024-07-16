@@ -26,7 +26,7 @@ extension [Document] {
     ///   - configuration: The configuration that the pdfs will use.
     ///   - processorCount: In allmost all circumstances you can omit this parameter.
     ///
-    public func print(
+     public func print(
         configuration: PDFConfiguration,
         processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
     ) async throws {
@@ -61,6 +61,33 @@ extension [Document] {
     }
 }
 
+extension Document {
+    /// Prints a single document to a pdf at the given configuration.
+    ///
+    /// This function is more convenient when you have a directory and just want to title the pdf and save it to the directory.
+    ///
+    /// ## Example
+    /// ```swift
+    ///  let html = "<html><body><h1>Hello, World!</h1></body></html>"
+    ///  try await html.print(
+    ///     title: "helloWorld",
+    ///     to: .downloadsDirectory
+    ///  )
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - title: The title of the pdf
+    ///   - directory: The directory at which to print the pdf
+    ///   - configuration: The configuration of the pdf document.
+    ///
+    /// - Throws: `Error` if the function cannot clean up the temporary .html file it creates.
+    public func print(
+       configuration: PDFConfiguration,
+       processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
+    ) async throws {
+        try await [self].print(configuration: configuration, processorCount: processorCount)
+    }
+}
 
 extension String {
     /// Prints a single html string to a pdf at the given directory with the title and margins.
@@ -123,7 +150,7 @@ extension String {
 
 extension String {
     @MainActor
-    func print(
+    internal func print(
         to url: URL,
         configuration: PDFConfiguration,
         using webView: WKWebView = WKWebView(frame: .zero)
@@ -135,7 +162,7 @@ extension String {
         )
         
         webView.navigationDelegate = webViewNavigationDelegate
-        webView.loadHTMLString(self, baseURL: nil)
+        webView.loadHTMLString(self, baseURL: configuration.baseURL)
         
         await withCheckedContinuation { continuation in
             webViewNavigationDelegate.printDelegate = .init {
@@ -146,8 +173,12 @@ extension String {
 }
 
 extension PDFConfiguration {
-    public static func a4(margins: EdgeInsets) -> PDFConfiguration {
-        return .init(paperSize: .paperSize(), margins: margins)
+    public static func a4(margins: EdgeInsets = .a4, baseURL: URL? = nil) -> PDFConfiguration {
+        return .init(
+            margins: margins,
+            paperSize: .paperSize(),
+            baseURL: baseURL
+        )
     }
 }
 

@@ -236,13 +236,7 @@ struct Local {
         try FileManager.default.removeItems(at: output)
         
         try await [String].init(repeating: htmlString, count: count)
-            .print(
-                to: output,
-                configuration: .init(
-                    paperSize: .paperSize(),
-                    margins: .a4
-                )
-            )
+            .print(to: output)
         
         let contents_after = try FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil)
                
