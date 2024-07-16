@@ -116,8 +116,8 @@ extension String {
         configuration: PDFConfiguration
     ) async throws {
         try await [
-            self
-        ].print(to: url, configuration: configuration)
+            Document(url: url, html: self)
+        ].print(configuration: configuration)
     }
 }
 

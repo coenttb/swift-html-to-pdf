@@ -12,29 +12,20 @@ import Testing
 @Suite("Temporary")
 struct TemporaryDirectory {
     
-    @Test(.disabled()) func single() async throws {
+    @Test() func individual() async throws {
         
-        await withKnownIssue {
-            
-//           Console log:
-//            FAULT: NSInternalInconsistencyException: Printing failed because PMSessionBeginCGDocumentNoDialog() returned -30872.; {
-//                NSUnderlyingError = "Error Domain=NSCocoaErrorDomain Code=-30872 \"To print this file, you must set up a printer.\" UserInfo={NSLocalizedDescription=To print this file, you must set up a printer., NSLocalizedRecoverySuggestion=To set up a printer, choose Apple menu > System Settings, click Printers & Scanners, and then click the Add (+) button.}";
-//            }
-            
-            let id = UUID()
-            let directory = URL.output(id: id)
-            
-            try directory.createDirectories()
-            
-            try await htmlString.print(to: directory.appendingPathComponent("\(id.uuidString) test string").appendingPathExtension("pdf"), configuration: .a4)
-            
-            let contents_after = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
-            
-            #expect(contents_after.count == 1)
-            
-            try FileManager.default.removeItems(at: directory)
-        }
+        let id = UUID()
+        let directory = URL.output(id: id)
         
+        try directory.createDirectories()
+        
+        try await htmlString.print(to: directory.appendingPathComponent("\(id.uuidString) test string").appendingPathExtension("pdf"), configuration: .a4)
+        
+        let contents_after = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+        
+        #expect(contents_after.count == 1)
+        
+        try FileManager.default.removeItems(at: directory)
         
     }
     
@@ -165,17 +156,18 @@ struct TemporaryDirectory {
 struct Local {
     let cleanup: Bool = false
     
-    @Test(.disabled()) func individual() async throws {
-        await withKnownIssue {
-            let output = URL.localHtmlToPdf.appendingPathComponent("individual")
-            
-            try await htmlString.print(title: "individual", to: output, configuration: .a4)
-            
-            #expect(FileManager.default.fileExists(atPath: output.path))
-            
-            if cleanup {
-                try FileManager.default.removeItems(at: output)
-            }
+    @Test() func individual() async throws {
+        let output = URL.localHtmlToPdf.appendingPathComponent("individual")
+        
+        try output.createDirectories()
+        try FileManager.default.removeItems(at: output)
+        
+        try await htmlString.print(title: "individual", to: output, configuration: .a4)
+        
+        #expect(FileManager.default.fileExists(atPath: output.path))
+        
+        if cleanup {
+            try FileManager.default.removeItems(at: output)
         }
     }
     
@@ -184,6 +176,7 @@ struct Local {
         let count = 10
         
         try output.createDirectories()
+        try FileManager.default.removeItems(at: output)
         
         try await [String].init(repeating: htmlString, count: count)
             .print(
@@ -195,13 +188,8 @@ struct Local {
             )
         
         let contents_after = try FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil)
-        
-        for content in contents_after {
-            print("\(content)")
-        }
-        
+               
         #expect(contents_after.count == count)
-        
         
         if cleanup {
             try FileManager.default.removeItems(at: output)
