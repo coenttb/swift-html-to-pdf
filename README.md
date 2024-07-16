@@ -35,16 +35,16 @@ targets: [
 The package includes a test that prints 1000 html strings to pdfs in 1.25 seconds.
 
 ```swift
-    @Test func collection() async throws {
-        [...]
-        let count = 1_000
-        await [String].init(
-            repeating: "<html><body><h1>Hello, World 1!</h1></body></html>",
-            count: count
-        )
-        .print(to: output)
-        [...]
-    }
+@Test func collection() async throws {
+    [...]
+    let count = 1_000
+    try await [String].init(
+        repeating: "<html><body><h1>Hello, World 1!</h1></body></html>",
+        count: count
+    )
+    .print(to: output)
+    [...]
+}
 ```
 
 
@@ -54,19 +54,19 @@ Print to a file url:
 ```swift
 let fileUrl = URL(...)
 let html = "<html><body><h1>Hello, World 1!</h1></body></html>"
-html.print(to: fileUrl)
+try await html.print(to: fileUrl)
 ```
 Print to a directory with a file title.
 ```swift
 let directory = URL(...)
 let html = "<html><body><h1>Hello, World 1!</h1></body></html>"
-html.print(title: "file title", to: directory)
+try await  html.print(title: "file title", to: directory)
 ```
 
 Print a collection to a directory.
 ```swift
 let directory = URL(...)
-[
+try await [
     html,
     html,
     html,
