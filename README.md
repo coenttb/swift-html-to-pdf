@@ -19,6 +19,16 @@ dependencies: [
 ]
 ```
 
+and add the library to your target's dependencies:
+```swift
+.target(
+    name: "TheNameOfYourTarget",
+    dependencies: [
+        .product(name: "HtmlToPdf", package: "swift-html-to-pdf")
+    ]
+)
+```
+
 ## Performance
 The package includes a test that prints 1000 html strings to pdfs in 1.25 seconds.
 
