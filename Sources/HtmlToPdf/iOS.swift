@@ -82,8 +82,8 @@ extension UIEdgeInsets {
     public static let a4: UIEdgeInsets = UIEdgeInsets(
         top: -36,
         left: -36,
-        bottom: -36,
-        right: -36
+        bottom: 36,
+        right: 36
     )
 }
 
@@ -104,6 +104,10 @@ extension PDFConfiguration {
         
         return .init(rect: rect)
     }
+}
+
+extension CGRect {
+    static let paperSize: CGRect = CGRect(x: 0, y: 0, width: PrintInfo.shared.paperSize.width, height: PrintInfo.shared.paperSize.height)
 }
 
 #endif

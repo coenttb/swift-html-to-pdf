@@ -98,7 +98,22 @@ extension [Document] {
 }
 
 public struct PDFConfiguration: Sendable {
-    let rect: CGRect
+    let paperSize: CGRect
+    let margins: NSEdgeInsets
+    
+    var rect: CGRect {
+        let pageWidth: CGFloat = paperSize.width
+        let pageHeight: CGFloat = paperSize.height
+        let printableWidth = pageWidth - margins.left - margins.right
+        let printableHeight = pageHeight - margins.top - margins.bottom
+        
+        return CGRect(
+            x: margins.left,
+            y: margins.top,
+            width: printableWidth,
+            height: printableHeight
+        )
+    }
 }
 
 extension PDFConfiguration {
@@ -115,47 +130,83 @@ extension WKPDFConfiguration {
 }
 
 class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
+    let window: NSWindow
     private let outputURL: URL
     var onFinished: (@Sendable () -> Void)?
     
     private let configuration: PDFConfiguration
     
     init(
+        window: NSWindow,
         outputURL: URL,
         configuration: PDFConfiguration
     ) {
+        self.window = window
         self.outputURL = outputURL
         self.configuration = configuration
     }
     
+    @objc func printOperationDidRun(_ printOperation: NSPrintOperation, success: Bool, contextInfo: UnsafeMutableRawPointer?) {
+        if let onFinished {
+            onFinished()
+        }
+    }
+    
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        Task { @MainActor [configuration, outputURL, onFinished] in
+        Task { @MainActor [window, configuration, outputURL, onFinished] in
             
-            webView.frame = configuration.rect
+            webView.frame = configuration.paperSize
             
-            let configuration = WKPDFConfiguration(configuration: configuration)
+//            let configuration = WKPDFConfiguration(configuration: configuration)
             
-            webView.createPDF(configuration: configuration) { result in
-                switch result {
-                case .success(let data):
-                    do {
-                        try FileManager.default.createDirectory(
-                            at: outputURL.deletingLastPathComponent(),
-                            withIntermediateDirectories: true,
-                            attributes: nil
-                        )
-                        try data.write(to: outputURL)
-                        print("PDF saved to \(outputURL.path)")
-                    } catch {
-                        Swift.print("Failed to save PDF: \(error)")
-                    }
-                case .failure(let error):
-                    Swift.print("Failed to create PDF: \(error)")
-                }
-                if let onFinished {
-                    onFinished()
-                }
-            }
+//            webView.createPDF(configuration: configuration) { result in
+//                switch result {
+//                case .success(let data):
+//                    do {
+//                        try FileManager.default.createDirectory(
+//                            at: outputURL.deletingLastPathComponent(),
+//                            withIntermediateDirectories: true,
+//                            attributes: nil
+//                        )
+//                        try data.write(to: outputURL)
+//                        print("PDF saved to \(outputURL.path)")
+//                    } catch {
+//                        Swift.print("Failed to save PDF: \(error)")
+//                    }
+//                case .failure(let error):
+//                    Swift.print("Failed to create PDF: \(error)")
+//                }
+//                if let onFinished {
+//                    onFinished()
+//                }
+//            }
+//            
+//
+            
+            
+            let printInfo = NSPrintInfo.pdf(url: outputURL)
+            let printOperation = NSPrintOperation(view: webView, printInfo: printInfo)
+            printOperation.showsPrintPanel = false
+            printOperation.showsProgressPanel = false
+            printOperation.runModal(for: window, delegate: PrintDelegate.init(onFinished: onFinished), didRun: #selector(printOperationDidRun(_:success:contextInfo:)), contextInfo: nil)
+            
+        }
+    }
+}
+
+class PrintDelegate {
+    
+    var onFinished: (@Sendable () -> Void)?
+    
+    init(onFinished: (@Sendable () -> Void)? = nil) {
+        self.onFinished = onFinished
+    }
+    
+    @objc func printOperationDidRun(_ printOperation: NSPrintOperation, success: Bool, contextInfo: UnsafeMutableRawPointer?) {
+        if let onFinished {
+            print("printOperationDidRun.success", success)
+            print("printOperationDidRun.printOperation", printOperation)
+            onFinished()
         }
     }
 }

@@ -9,6 +9,10 @@
 import Foundation
 import WebKit
 
+
+
+
+
 extension String {
     /// Prints a single html string to a pdf at the given directory with the title and margins.
     ///
@@ -40,6 +44,36 @@ extension String {
         )
     }
 }
+
+extension CGRect {
+    static func paperSize()-> CGRect {
+        CGRect(x: 0, y: 0, width: NSPrintInfo.shared.paperSize.width, height: NSPrintInfo.shared.paperSize.height)
+    }
+    static func a4() -> CGRect {
+        CGRect(x: 0, y: 0, width: 595.22, height: 841.85)
+    }
+}
+
+public extension NSPrintInfo {
+    static func pdf(url: URL) -> NSPrintInfo {
+        NSPrintInfo(
+            dictionary: [
+                .jobDisposition: NSPrintInfo.JobDisposition.save,
+                .jobSavingURL: url,
+                .allPages: true,
+                .topMargin: 0.0,
+                .bottomMargin: 0.0,
+                .leftMargin: 0.0,
+                .rightMargin: 0.0,
+                .paperSize: NSSize(width: 595.22, height: 841.85)
+                    
+            ]
+        )
+    }
+}
+
+
+
 
 extension String {
     /// Prints a single html string to a pdf at the given URL, with the given margins.
@@ -79,13 +113,18 @@ extension String {
 
         let request = URLRequest(url: tempHTMLFileURL)
 
+        let window = NSWindow()
+        
+        
         let webViewNavigationDelegate = WebViewNavigationDelegate(
+            window: window,
             outputURL: url,
             configuration: configuration
         )
 
         webView.navigationDelegate = webViewNavigationDelegate
-        webView.load(request)
+//        webView.load(request)
+        webView.loadHTMLString(self, baseURL: nil)
 
         await withCheckedContinuation { continuation in
             webViewNavigationDelegate.onFinished = {
@@ -106,19 +145,7 @@ extension NSEdgeInsets {
 
 extension PDFConfiguration {
     public static func a4(margins: NSEdgeInsets = .a4) -> PDFConfiguration {
-        let pageWidth: CGFloat = 595.22
-        let pageHeight: CGFloat = 841.85
-        let printableWidth = pageWidth - margins.left - margins.right
-        let printableHeight = pageHeight - margins.top - margins.bottom
-        
-        let rect = CGRect(
-            x: margins.left,
-            y: margins.top,
-            width: printableWidth,
-            height: printableHeight
-        )
-        
-        return .init(rect: rect)
+        return .init(paperSize: .paperSize(), margins: margins)
     }
 }
 

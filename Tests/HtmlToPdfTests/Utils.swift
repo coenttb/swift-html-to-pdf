@@ -35,6 +35,3 @@ extension FileManager {
 }
 
 
-extension String {
-    static let hello_world_html: Self = "<html><body><h1>Hello, World!</h1></body></html>"
-}
