@@ -5,9 +5,8 @@ This Swift package extends String with a convenient interface for performantly c
 ## Features
 
 - Convert HTML strings to PDF documents on both iOS and macOS.
+- Lightweight and fast: it can handle thousands of documents quickly.
 - Customize margins for PDF documents.
-- Asynchronous operations for smooth and efficient processing.
-- Support for batch processing of multiple documents.
 - Swift 6 language mode enabled
 
 ## Installation
