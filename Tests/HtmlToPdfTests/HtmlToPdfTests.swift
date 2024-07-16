@@ -30,7 +30,7 @@ struct TemporaryDirectory {
         
         try output.createDirectories()
         
-        await [String].init(repeating: "<html><body><h1>Hello, World 1!</h1></body></html>", count: count)
+        try await [String].init(repeating: "<html><body><h1>Hello, World 1!</h1></body></html>", count: count)
             .print(to: output)
         
         let contents_after = try FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil)
@@ -47,14 +47,14 @@ struct TemporaryDirectory {
         
         try output.createDirectories()
         
-        await [String].init(repeating: "<html><body><h1>Hello, World 1!</h1></body></html>", count: count)
+        try await [String].init(repeating: "<html><body><h1>Hello, World 1!</h1></body></html>", count: count)
             .print(
                 to: output,
                 configuration: .a4,
                 filename: { _ in UUID().uuidString }
             )
         
-        await [String].init(repeating: "<html><body><h1>Hello, World 2!</h1></body></html>", count: count)
+        try await [String].init(repeating: "<html><body><h1>Hello, World 2!</h1></body></html>", count: count)
             .print(
                 to: output,
                 filename: { _ in UUID().uuidString }
@@ -106,7 +106,7 @@ struct TemporaryDirectory {
             ),
         ]
         
-        await documents.print(
+        try await documents.print(
                 to: output,
                 configuration: .a4
             )
@@ -153,7 +153,7 @@ struct Local {
     @Test func local_collection() async throws {
         let output = URL.localHtmlToPdf
         
-        await [String].init(repeating: .hello_world_html, count: 10)
+        try await [String].init(repeating: .hello_world_html, count: 10)
             .print(to: output)
         
         #expect(FileManager.default.fileExists(atPath: output.path))

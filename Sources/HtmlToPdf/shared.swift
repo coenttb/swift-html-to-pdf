@@ -25,8 +25,8 @@ extension [String] {
         configuration: PDFConfiguration = .a4,
         filename: (Int) -> String = { index in "\(index + 1)" },
         processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
-    ) async {
-        await self.enumerated()
+    ) async throws {
+        try await self.enumerated()
             .map { index, html in
                 Document(
                     url: directory
@@ -65,7 +65,7 @@ extension [Document] {
         to directory: URL,
         configuration: PDFConfiguration,
         processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
-    ) async {
+    ) async throws {
         let webViewPool = await WebViewPool(size: processorCount)
         
         let stream = AsyncStream { continuation in
@@ -77,23 +77,18 @@ extension [Document] {
             }
         }
         
-        await withTaskGroup(of: Void.self) { taskGroup in
+        await withThrowingTaskGroup(of: Void.self) { taskGroup in
             for _ in 0..<processorCount {
                 taskGroup.addTask {
                     for await document in stream {
                         let webView = await webViewPool.acquire()
-                        do {
-                            
-                            try await document.html.print(
-                                to: document.url
-                                    .deletingPathExtension()
-                                    .appendingPathExtension("pdf"),
-                                configuration: configuration,
-                                using: webView
-                            )
-                        } catch {
-                            Swift.print("[Document].print error:", error)
-                        }
+                        try await document.html.print(
+                            to: document.url
+                                .deletingPathExtension()
+                                .appendingPathExtension("pdf"),
+                            configuration: configuration,
+                            using: webView
+                        )
                         await webViewPool.release(webView)
                     }
                 }
