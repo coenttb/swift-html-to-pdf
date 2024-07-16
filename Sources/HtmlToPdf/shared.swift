@@ -22,7 +22,7 @@ extension [String] {
     ///
     public func print(
         to directory: URL,
-        configuration: PDFConfiguration = .a4,
+        configuration: PDFConfiguration,
         filename: (Int) -> String = { index in "\(index + 1)" },
         processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
     ) async throws {
@@ -42,59 +42,6 @@ extension [String] {
     }
 }
 
-extension [Document] {
-    /// Prints documents  to pdf's at the given directory.
-    ///
-    /// ## Example
-    /// ```swift
-    /// let htmls = [
-    ///     "<html><body><h1>Hello, World 1!</h1></body></html>",
-    ///     "<html><body><h1>Hello, World 1!</h1></body></html>",
-    ///     ...
-    /// ]
-    /// try await htmls.print(to: .downloadsDirectory)
-    /// ```
-    ///
-    /// - Parameters:
-    ///   - directory: The directory at which to print the documents.
-    ///   - configuration: The configuration that the pdfs will use.
-    ///   - processorCount: In allmost all circumstances you can omit this parameter.
-    ///
-    public func print(
-//        to directory: URL,
-        configuration: PDFConfiguration,
-        processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
-    ) async throws {
-        let webViewPool = await WebViewPool(size: processorCount)
-        
-        let stream = AsyncStream { continuation in
-            Task {
-                for document in self {
-                    continuation.yield(document)
-                }
-                continuation.finish()
-            }
-        }
-        
-        await withThrowingTaskGroup(of: Void.self) { taskGroup in
-            for _ in 0..<processorCount {
-                taskGroup.addTask {
-                    for await document in stream {
-                        let webView = await webViewPool.acquire()
-                        try await document.html.print(
-                            to: document.url
-                                .deletingPathExtension()
-                                .appendingPathExtension("pdf"),
-                            configuration: configuration,
-                            using: webView
-                        )
-                        await webViewPool.release(webView)
-                    }
-                }
-            }
-        }
-    }
-}
 
 public struct EdgeInsets: Sendable {
     let top: CGFloat
@@ -113,10 +60,10 @@ public struct EdgeInsets: Sendable {
 extension EdgeInsets {
     public static var a4: EdgeInsets {
         EdgeInsets(
-            top: -36,
-            left: -36,
-            bottom: -36,
-            right: -36
+            top: 36,
+            left: 36,
+            bottom: 36,
+            right: 36
         )
     }
 }
@@ -138,6 +85,14 @@ public struct PDFConfiguration: Sendable {
             height: printableHeight
         )
     }
+    
+    public init(
+        paperSize: CGSize = .paperSize(),
+        margins: EdgeInsets
+    ) {
+        self.paperSize = paperSize
+        self.margins = margins
+    }
 }
 
 extension PDFConfiguration {
@@ -145,19 +100,6 @@ extension PDFConfiguration {
         .a4(margins: .a4)
     }
 }
-
-//extension WKPDFConfiguration {
-//    public convenience init(
-//        configuration: PDFConfiguration
-//    ){
-//        self.init()
-//        self.rect = configuration.printableRect
-//    }
-//}
-
-
-
-
 
 public struct Document: Sendable {
     let url: URL
@@ -172,25 +114,11 @@ public struct Document: Sendable {
     }
 }
 
-@MainActor
-class WebViewPool {
-    private var pool: [WKWebView]
-    private let semaphore: DispatchSemaphore
-    
-    init(size: Int) {
-        self.pool = (0..<size).map { _ in
-            WKWebView(frame: .zero)
-        }
-        self.semaphore = DispatchSemaphore(value: size)
-    }
-    
-    func acquire() -> WKWebView {
-        semaphore.wait()
-        return pool.removeFirst()
-    }
-    
-    func release(_ webView: WKWebView) {
-        pool.append(webView)
-        semaphore.signal()
+extension CGSize {
+    public static func a4() -> CGSize {
+        CGSize(width: 595.22, height: 841.85)
     }
 }
+
+
+

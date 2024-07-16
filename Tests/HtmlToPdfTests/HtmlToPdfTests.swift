@@ -20,7 +20,7 @@ struct TemporaryDirectory {
         
         try directory.createDirectories()
         
-        try await htmlString.print(to: directory.appendingPathComponent("\(id.uuidString) test string").appendingPathExtension("pdf"))
+        try await htmlString.print(to: directory.appendingPathComponent("\(id.uuidString) test string").appendingPathExtension("pdf"), configuration: .a4)
         
         let contents_after = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
         
@@ -37,7 +37,7 @@ struct TemporaryDirectory {
         try output.createDirectories()
         
         try await [String].init(repeating: htmlString, count: count)
-            .print(to: output)
+            .print(to: output, configuration: .a4)
         
         let contents_after = try FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil)
         
@@ -62,7 +62,7 @@ struct TemporaryDirectory {
         
         try await [String].init(repeating: htmlString, count: count)
             .print(
-                to: output,
+                to: output, configuration: .a4,
                 filename: { _ in UUID().uuidString }
             )
         
@@ -132,7 +132,7 @@ struct Local {
     @Test func individual() async throws {
         let output = URL.localHtmlToPdf
         
-        try await htmlString.print(title: "individual", to: output)
+        try await htmlString.print(title: "individual", to: output, configuration: .a4)
         
         #expect(FileManager.default.fileExists(atPath: output.path))
         
@@ -148,7 +148,13 @@ struct Local {
         try output.createDirectories()
         
         try await [String].init(repeating: htmlString, count: count)
-            .print(to: output)
+            .print(
+                to: output,
+                configuration: .init(
+                    paperSize: .paperSize(),
+                    margins: .a4
+                )
+            )
         
         let contents_after = try FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil)
         

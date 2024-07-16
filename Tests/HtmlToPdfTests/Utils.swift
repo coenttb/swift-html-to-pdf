@@ -17,9 +17,13 @@ extension URL {
     }
     
     static var localHtmlToPdf: Self {
-//        URL.documentsDirectory.appendingPathComponent("HtmlToPdf")
+        #if os(macOS)
+        return URL.documentsDirectory.appendingPathComponent("HtmlToPdf")
+        #endif
+        #if os(iOS)
         let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-        return paths.first!
+        return paths.first!.appendingPathComponent("HtmlToPdf")
+        #endif
     }
 }
 
