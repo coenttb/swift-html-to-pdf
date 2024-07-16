@@ -32,7 +32,7 @@ targets: [
 ```
 
 ## Performance
-The package includes a test that prints 1000 html strings to pdfs in 1.25 seconds.
+The package includes a test that prints 1000 html strings to pdfs in 11 seconds.
 
 ```swift
 @Test func collection() async throws {
