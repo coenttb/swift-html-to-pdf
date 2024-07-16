@@ -58,6 +58,6 @@ let directory = URL(...)
     html,
     ....
 ]
-.print(to: fileUrl)
+.print(to: directory)
 ```
 
