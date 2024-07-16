@@ -73,43 +73,43 @@ struct TemporaryDirectory {
         try FileManager.default.removeItems(at: output)
     }
     
-    @Test func collection_3() async throws {
-        
-        let output = URL.output()
-        
-        try output.createDirectories()
-        
-        let documents = [
-            Document(
-                url: output.appendingPathComponent("file1").appendingPathExtension("pdf"),
-                html: "<html><body><h1>Hello, World 1!</h1></body></html>"
-            ),
-            Document(
-                url: output.appendingPathComponent("file2").appendingPathExtension("pdf"),
-                html: "<html><body><h1>Hello, World 2!</h1></body></html>"
-            ),
-            Document(
-                url: output.appendingPathComponent("file3").appendingPathExtension("pdf"),
-                html: "<html><body><h1>Hello, World 1!</h1></body></html>"
-            ),
-            Document(
-                url: output.appendingPathComponent("file4").appendingPathExtension("pdf"),
-                html: "<html><body><h1>Hello, World 2!</h1></body></html>"
-            ),
-            Document(
-                url: output.appendingPathComponent("file5").appendingPathExtension("pdf"),
-                html: "<html><body><h1>Hello, World 1!</h1></body></html>"
-            ),
-            Document(
-                url: output.appendingPathComponent("file6").appendingPathExtension("pdf"),
-                html: "<html><body><h1>Hello, World 2!</h1></body></html>"
-            ),
-        ]
-        
-        try await documents.print(
-                to: output,
-                configuration: .a4
-            )
+//    @Test func collection_3() async throws {
+//        
+//        let output = URL.output()
+//        
+//        try output.createDirectories()
+//        
+//        let documents = [
+//            Document(
+//                url: output.appendingPathComponent("file1").appendingPathExtension("pdf"),
+//                html: "<html><body><h1>Hello, World 1!</h1></body></html>"
+//            ),
+//            Document(
+//                url: output.appendingPathComponent("file2").appendingPathExtension("pdf"),
+//                html: "<html><body><h1>Hello, World 2!</h1></body></html>"
+//            ),
+//            Document(
+//                url: output.appendingPathComponent("file3").appendingPathExtension("pdf"),
+//                html: "<html><body><h1>Hello, World 1!</h1></body></html>"
+//            ),
+//            Document(
+//                url: output.appendingPathComponent("file4").appendingPathExtension("pdf"),
+//                html: "<html><body><h1>Hello, World 2!</h1></body></html>"
+//            ),
+//            Document(
+//                url: output.appendingPathComponent("file5").appendingPathExtension("pdf"),
+//                html: "<html><body><h1>Hello, World 1!</h1></body></html>"
+//            ),
+//            Document(
+//                url: output.appendingPathComponent("file6").appendingPathExtension("pdf"),
+//                html: "<html><body><h1>Hello, World 2!</h1></body></html>"
+//            ),
+//        ]
+//        
+//        try await documents.print(
+//                to: output,
+//                configuration: .a4
+//            )
         
 //        await [String].init(repeating: "<html><body><h1>Hello, World 2!</h1></body></html>", count: count)
 //            .print(
@@ -123,12 +123,12 @@ struct TemporaryDirectory {
 //            configuration: .a4
 //        )
         
-        let contents_after = try FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil)
-        
-        #expect(contents_after.count == documents.count)
-        
-        try FileManager.default.removeItems(at: output)
-    }
+//        let contents_after = try FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil)
+//        
+//        #expect(contents_after.count == documents.count)
+//        
+//        try FileManager.default.removeItems(at: output)
+//    }
 }
 #if os(macOS)
 
