@@ -25,7 +25,7 @@ The package includes a test that prints 1000 html strings to pdfs in 1.25 second
 ```swift
     @Test func collection() async throws {
         [...]
-        let count = 10_000
+        let count = 1_000
         await [String].init(
             repeating: "<html><body><h1>Hello, World 1!</h1></body></html>",
             count: count
