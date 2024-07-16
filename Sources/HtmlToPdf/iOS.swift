@@ -8,7 +8,55 @@
 #if os(iOS)
 
 import Foundation
+import UIKit
 import WebKit
+
+extension [Document] {
+    /// Prints documents  to pdf's at the given directory.
+    ///
+    /// ## Example
+    /// ```swift
+    /// let htmls = [
+    ///     "<html><body><h1>Hello, World 1!</h1></body></html>",
+    ///     "<html><body><h1>Hello, World 1!</h1></body></html>",
+    ///     ...
+    /// ]
+    /// try await htmls.print(to: .downloadsDirectory)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - configuration: The configuration that the pdfs will use.
+    ///   - processorCount: In allmost all circumstances you can omit this parameter.
+    ///
+    public func print(
+        configuration: PDFConfiguration,
+        processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
+    ) async throws {
+        let stream = AsyncStream { continuation in
+            Task {
+                for document in self {
+                    continuation.yield(document)
+                }
+                continuation.finish()
+            }
+        }
+        
+        await withThrowingTaskGroup(of: Void.self) { taskGroup in
+            for _ in 0..<processorCount {
+                taskGroup.addTask {
+                    for await document in stream {
+                        try await document.html.print(
+                            to: document.url
+                                .deletingPathExtension()
+                                .appendingPathExtension("pdf"),
+                            configuration: configuration
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
 
 extension String {
     /// Prints a single html string to a pdf at the given directory with the title and margins.
@@ -32,7 +80,7 @@ extension String {
     public func print(
         title: String,
         to directory: URL,
-        configuration: PDFConfiguration = .a4
+        configuration: PDFConfiguration
     ) async throws {
         try await self.print(
             to: directory.appendingPathComponent(title).appendingPathExtension("pdf"),
@@ -45,64 +93,60 @@ extension String {
     @MainActor
     public func print(
         to url: URL,
-        configuration: PDFConfiguration = .a4,
-        using webView: WKWebView = WKWebView(frame: .zero)
+        configuration: PDFConfiguration
     ) async throws {
-        let tempHTMLFileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("html")
+        let html = self
+
+        let renderer = UIPrintPageRenderer.init()
         
-        do {
-            try self.write(to: tempHTMLFileURL, atomically: true, encoding: .utf8)
-        } catch {
-            throw error
+        let printFormatter = UIMarkupTextPrintFormatter(markupText: html)
+        
+        renderer.addPrintFormatter(printFormatter, startingAtPageAt: 0)
+        
+        let paperRect = CGRect.init(origin: .zero, size: configuration.paperSize)
+
+        renderer.setValue(NSValue(cgRect: paperRect), forKey: "paperRect")
+        renderer.setValue(NSValue(cgRect: configuration.printableRect), forKey: "printableRect")
+
+        let pdfData = NSMutableData()
+        UIGraphicsBeginPDFContextToData(pdfData, paperRect, nil)
+        renderer.prepare(forDrawingPages: NSRange(location: 0, length: renderer.numberOfPages))
+
+        let bounds = UIGraphicsGetPDFContextBounds()
+
+        for i in 0..<renderer.numberOfPages {
+            UIGraphicsBeginPDFPage()
+            renderer.drawPage(at: i, in: bounds)
         }
-        
-        defer {
-            try? FileManager.default.removeItem(at: tempHTMLFileURL)
-        }
-        
-        let request = URLRequest(url: tempHTMLFileURL)
-        
-        let webViewNavigationDelegate = WebViewNavigationDelegate(
-            outputURL: url,
-            configuration: configuration
-        )
-        
-        webView.navigationDelegate = webViewNavigationDelegate
-        webView.load(request)
-        
-        await withCheckedContinuation { continuation in
-            webViewNavigationDelegate.onFinished = {
-                continuation.resume()
-            }
-        }
+
+        UIGraphicsEndPDFContext()
+
+        try pdfData.write(to: url)
+    }
+}
+
+extension PDFConfiguration {
+    public static func a4(margins: EdgeInsets) -> PDFConfiguration {
+        return .init(paperSize: .a4(), margins: margins)
+    }
+}
+
+extension CGSize {
+    public static func paperSize() -> CGSize {
+        CGSize(width: 595.22, height: 841.85)
     }
 }
 
 extension UIEdgeInsets {
-    public static let a4: UIEdgeInsets = UIEdgeInsets(
-        top: -36,
-        left: -36,
-        bottom: -36,
-        right: -36
-    )
-}
-
-extension PDFConfiguration {
-    public static func a4(margins: UIEdgeInsets = .a4) -> PDFConfiguration {
-        
-        let pageWidth: CGFloat = 595.22
-        let pageHeight: CGFloat = 841.85
-        let printableWidth = pageWidth - margins.left - margins.right
-        let printableHeight = pageHeight - margins.top - margins.bottom
-        
-        let rect = CGRect(
-            x: margins.left,
-            y: margins.top,
-            width: printableWidth,
-            height: printableHeight
+    init(
+        edgeInsets: EdgeInsets
+    ){
+        self = .init(
+            top: .init(edgeInsets.top),
+            left: .init(edgeInsets.left),
+            bottom: .init(edgeInsets.bottom),
+            right: .init(edgeInsets.right)
         )
-        
-        return .init(rect: rect)
     }
 }
 

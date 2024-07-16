@@ -9,6 +9,59 @@
 import Foundation
 import WebKit
 
+extension [Document] {
+    /// Prints documents  to pdf's at the given directory.
+    ///
+    /// ## Example
+    /// ```swift
+    /// let htmls = [
+    ///     "<html><body><h1>Hello, World 1!</h1></body></html>",
+    ///     "<html><body><h1>Hello, World 1!</h1></body></html>",
+    ///     ...
+    /// ]
+    /// try await htmls.print(to: .downloadsDirectory)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - configuration: The configuration that the pdfs will use.
+    ///   - processorCount: In allmost all circumstances you can omit this parameter.
+    ///
+    public func print(
+        configuration: PDFConfiguration,
+        processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
+    ) async throws {
+        let webViewPool = await WebViewPool(size: processorCount)
+        
+        let stream = AsyncStream { continuation in
+            Task {
+                for document in self {
+                    continuation.yield(document)
+                }
+                continuation.finish()
+            }
+        }
+        
+        await withThrowingTaskGroup(of: Void.self) { taskGroup in
+            for _ in 0..<processorCount {
+                taskGroup.addTask {
+                    for await document in stream {
+                        let webView = await webViewPool.acquire()
+                        try await document.html.print(
+                            to: document.url
+                                .deletingPathExtension()
+                                .appendingPathExtension("pdf"),
+                            configuration: configuration,
+                            using: webView
+                        )
+                        await webViewPool.release(webView)
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 extension String {
     /// Prints a single html string to a pdf at the given directory with the title and margins.
     ///
@@ -32,12 +85,11 @@ extension String {
     public func print(
         title: String,
         to directory: URL,
-        configuration: PDFConfiguration = .a4
+        configuration: PDFConfiguration
     ) async throws {
-        try await self.print(
-            to: directory.appendingPathComponent(title, conformingTo: .pdf),
-            configuration: configuration
-        )
+        try await [
+            Document(url: directory.appendingPathComponent(title, conformingTo: .pdf), html: self)
+        ].print(configuration: configuration)
     }
 }
 
@@ -55,70 +107,175 @@ extension String {
     /// - Parameters:
     ///   - url: The url at which to print the pdf
     ///   - configuration: The configuration of the pdf document.
-    ///   - webView: In allmost all circumstances you can omit this parameter. the function will re-use webviews for performance reasons and you may optionally provide an already existing webView.
     ///
     /// - Throws: `Error` if the function cannot clean up the temporary .html file it creates.
     ///
     @MainActor
     public func print(
         to url: URL,
-        configuration: PDFConfiguration = .a4,
+        configuration: PDFConfiguration
+    ) async throws {
+        try await [
+            Document(url: url, html: self)
+        ].print(configuration: configuration)
+    }
+}
+
+extension String {
+    @MainActor
+    func print(
+        to url: URL,
+        configuration: PDFConfiguration,
         using webView: WKWebView = WKWebView(frame: .zero)
     ) async throws {
-        let tempHTMLFileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("html")
-
-        do {
-            try self.write(to: tempHTMLFileURL, atomically: true, encoding: .utf8)
-        } catch {
-            throw error
-        }
-
-        defer {
-            try? FileManager.default.removeItem(at: tempHTMLFileURL)
-        }
-
-        let request = URLRequest(url: tempHTMLFileURL)
-
+        
         let webViewNavigationDelegate = WebViewNavigationDelegate(
             outputURL: url,
             configuration: configuration
         )
-
+        
         webView.navigationDelegate = webViewNavigationDelegate
-        webView.load(request)
-
+        webView.loadHTMLString(self, baseURL: nil)
+        
         await withCheckedContinuation { continuation in
-            webViewNavigationDelegate.onFinished = {
+            webViewNavigationDelegate.printDelegate = .init {
                 continuation.resume()
             }
         }
     }
 }
 
-extension NSEdgeInsets {
-    public static let a4: NSEdgeInsets = NSEdgeInsets(
-        top: -36,
-        left: -36,
-        bottom: -36,
-        right: -36
-    )
+extension PDFConfiguration {
+    public static func a4(margins: EdgeInsets) -> PDFConfiguration {
+        return .init(paperSize: .paperSize(), margins: margins)
+    }
 }
 
-extension PDFConfiguration {
-    public static func a4(margins: NSEdgeInsets = .a4) -> PDFConfiguration {
-        let pageWidth: CGFloat = 595.22
-        let pageHeight: CGFloat = 841.85
-        let printableWidth = pageWidth - margins.left - margins.right
-        let printableHeight = pageHeight - margins.top - margins.bottom
+public extension NSPrintInfo {
+    static func pdf(
+        url: URL,
+        configuration: PDFConfiguration
+    ) -> NSPrintInfo {
         
-        let rect = CGRect(
-            x: margins.left,
-            y: margins.top,
-            width: printableWidth,
-            height: printableHeight
+        .pdf(
+            url: url,
+            paperSize: configuration.paperSize,
+            topMargin: configuration.margins.top,
+            bottomMargin: configuration.margins.bottom,
+            leftMargin: configuration.margins.left,
+            rightMargin: configuration.margins.right
         )
-        
-        return .init(rect: rect)
+    }
+    
+    static func pdf(
+        url: URL,
+        paperSize: CGSize = NSPrintInfo.shared.paperSize,
+        topMargin: CGFloat = 36,
+        bottomMargin: CGFloat = 36,
+        leftMargin: CGFloat = 36,
+        rightMargin: CGFloat = 36
+    ) -> NSPrintInfo {
+        NSPrintInfo(
+            dictionary: [
+                .jobDisposition: NSPrintInfo.JobDisposition.save,
+                .jobSavingURL: url,
+                .allPages: true,
+                .topMargin: topMargin,
+                .bottomMargin: bottomMargin,
+                .leftMargin: leftMargin,
+                .rightMargin: rightMargin,
+                .paperSize: paperSize
+            ]
+        )
+    }
+}
+
+class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
+    private let outputURL: URL
+    var printDelegate: PrintDelegate?
+    
+    private let configuration: PDFConfiguration
+    
+    init(
+        outputURL: URL,
+        onFinished: (@Sendable () -> Void)? = nil,
+        configuration: PDFConfiguration
+    ) {
+        self.outputURL = outputURL
+        self.configuration = configuration
+        self.printDelegate = onFinished.map(PrintDelegate.init)
+    }
+    
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        Task { @MainActor [configuration, outputURL, printDelegate] in
+            
+            webView.frame = .init(origin: .zero, size: configuration.paperSize)
+
+            let printOperation = webView.printOperation(with: .pdf(url: outputURL, configuration: configuration))
+                       
+            printOperation.showsPrintPanel = false
+            printOperation.showsProgressPanel = false
+            printOperation.canSpawnSeparateThread = true
+            
+            printOperation.runModal(for: webView.window ?? NSWindow(), delegate: printDelegate, didRun: #selector(PrintDelegate.printOperationDidRun(_:success:contextInfo:)), contextInfo: nil)
+            
+        }
+    }
+}
+
+extension NSEdgeInsets {
+    init(
+        edgeInsets: EdgeInsets
+    ){
+        self = .init(
+            top: edgeInsets.top,
+            left: edgeInsets.left,
+            bottom: edgeInsets.bottom,
+            right: edgeInsets.right
+        )
+    }
+}
+
+class PrintDelegate: @unchecked Sendable {
+    
+    var onFinished: @Sendable () -> Void
+    
+    init(onFinished: @Sendable @escaping () -> Void) {
+        self.onFinished = onFinished
+    }
+    
+    @objc func printOperationDidRun(_ printOperation: NSPrintOperation, success: Bool, contextInfo: UnsafeMutableRawPointer?) {
+        print("printOperationDidRun.success", success)
+        onFinished()
+    }
+}
+
+@MainActor
+class WebViewPool {
+    private var pool: [WKWebView]
+    private let semaphore: DispatchSemaphore
+    
+    init(size: Int) {
+        self.pool = (0..<size).map { _ in
+            WKWebView(frame: .zero)
+        }
+        self.semaphore = DispatchSemaphore(value: size)
+    }
+    
+    func acquire() -> WKWebView {
+        semaphore.wait()
+        return pool.removeFirst()
+    }
+    
+    func release(_ webView: WKWebView) {
+        pool.append(webView)
+        semaphore.signal()
+    }
+}
+
+extension CGSize {
+    public static func paperSize()-> CGSize {
+        CGSize(width: NSPrintInfo.shared.paperSize.width, height: NSPrintInfo.shared.paperSize.height)
     }
 }
 

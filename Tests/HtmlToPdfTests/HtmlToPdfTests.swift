@@ -9,29 +9,35 @@ import Foundation
 import HtmlToPdf
 import Testing
 
+@Suite("Temporary")
 struct TemporaryDirectory {
-    @Test func single() async throws {
+    
+    @Test() func individual() async throws {
         
         let id = UUID()
-        let output = URL.output(id: id).appendingPathComponent(id.uuidString).appendingPathExtension("pdf")
-        let htmlString = "<html><body><h1>Hello, World!</h1></body></html>"
+        let directory = URL.output(id: id)
         
-        try await htmlString.print(to: output)
+        try directory.createDirectories()
         
-        #expect(FileManager.default.fileExists(atPath: output.path))
+        try await htmlString.print(to: directory.appendingPathComponent("\(id.uuidString) test string").appendingPathExtension("pdf"), configuration: .a4)
         
-        try FileManager.default.removeItems(at: output.deletingPathExtension().deletingLastPathComponent())
+        let contents_after = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+        
+        #expect(contents_after.count == 1)
+        
+        try FileManager.default.removeItems(at: directory)
+        
     }
     
-    @Test func collection() async throws {
+    @Test func collection_n_size() async throws {
         
-        let count = 1000
+        let count = 10
         let output = URL.output()
         
         try output.createDirectories()
         
-        try await [String].init(repeating: "<html><body><h1>Hello, World 1!</h1></body></html>", count: count)
-            .print(to: output)
+        try await [String].init(repeating: htmlString, count: count)
+            .print(to: output, configuration: .a4)
         
         let contents_after = try FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil)
         
@@ -40,27 +46,98 @@ struct TemporaryDirectory {
         try FileManager.default.removeItems(at: output)
     }
     
-    @Test func collection_2() async throws {
+    @Test func collection_n_size_double() async throws {
         let count = 10
         
         let output = URL.output()
         
         try output.createDirectories()
         
-        try await [String].init(repeating: "<html><body><h1>Hello, World 1!</h1></body></html>", count: count)
+        try await [String].init(repeating: htmlString, count: count)
             .print(
                 to: output,
                 configuration: .a4,
                 filename: { _ in UUID().uuidString }
             )
         
-        try await [String].init(repeating: "<html><body><h1>Hello, World 2!</h1></body></html>", count: count)
+        try await [String].init(repeating: htmlString, count: count)
+            .print(
+                to: output, configuration: .a4,
+                filename: { _ in UUID().uuidString }
+            )
+       
+        let contents_after = try FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil)
+        
+        #expect(contents_after.count == (count * 2) )
+        
+        try FileManager.default.removeItems(at: output)
+    }
+    
+    @Test func collection_of_documents() async throws {
+        
+        let output = URL.output()
+        
+        try output.createDirectories()
+        
+        let documents = [
+            Document(
+                url: output.appendingPathComponent("file1").appendingPathExtension("pdf"),
+                html: htmlString
+            ),
+            Document(
+                url: output.appendingPathComponent("file2").appendingPathExtension("pdf"),
+                html: htmlString
+            ),
+            Document(
+                url: output.appendingPathComponent("file3").appendingPathExtension("pdf"),
+                html: htmlString
+            ),
+            Document(
+                url: output.appendingPathComponent("file4").appendingPathExtension("pdf"),
+                html: htmlString
+            ),
+            Document(
+                url: output.appendingPathComponent("file5").appendingPathExtension("pdf"),
+                html: htmlString
+            ),
+            Document(
+                url: output.appendingPathComponent("file6").appendingPathExtension("pdf"),
+                html: htmlString
+            ),
+        ]
+        
+        try await documents.print(
+            configuration: .a4
+        )
+        
+        let contents_after = try FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil)
+        
+        #expect(contents_after.count == documents.count)
+        
+        try FileManager.default.removeItems(at: output)
+    }
+    
+    @Test func collection_collection_individual() async throws {
+        let count = 10
+        
+        let output = URL.output()
+        
+        try output.createDirectories()
+        
+        try await [String].init(repeating: htmlString, count: count)
             .print(
                 to: output,
+                configuration: .a4,
                 filename: { _ in UUID().uuidString }
             )
         
-        try await "<html><body><h1>Hello, World!</h1></body></html>".print(
+        try await [String].init(repeating: htmlString, count: count)
+            .print(
+                to: output, configuration: .a4,
+                filename: { _ in UUID().uuidString }
+            )
+        
+        try await htmlString.print(
             title: UUID().uuidString,
             to: output,
             configuration: .a4
@@ -132,16 +209,17 @@ struct TemporaryDirectory {
 }
 #if os(macOS)
 
-@Suite("Local", .disabled("enable this if you want to quickly see pdfs printed to your local documents directory"))
+@Suite("Local")
 struct Local {
-    
     let cleanup: Bool = false
     
-    @Test func local_individual() async throws {
-        let output = URL.localHtmlToPdf
-        let htmlString = "<html><body><h1>Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! </h1></body></html>"
+    @Test() func individual() async throws {
+        let output = URL.localHtmlToPdf.appendingPathComponent("individual")
         
-        try await htmlString.print(title: "individual", to: output)
+        try output.createDirectories()
+        try FileManager.default.removeItems(at: output)
+        
+        try await htmlString.print(title: "individual", to: output, configuration: .a4)
         
         #expect(FileManager.default.fileExists(atPath: output.path))
         
@@ -150,13 +228,25 @@ struct Local {
         }
     }
     
-    @Test func local_collection() async throws {
-        let output = URL.localHtmlToPdf
+    @Test() func collection() async throws {
+        let output = URL.localHtmlToPdf.appendingPathComponent("collection")
+        let count = 10
         
-        try await [String].init(repeating: .hello_world_html, count: 10)
-            .print(to: output)
+        try output.createDirectories()
+        try FileManager.default.removeItems(at: output)
         
-        #expect(FileManager.default.fileExists(atPath: output.path))
+        try await [String].init(repeating: htmlString, count: count)
+            .print(
+                to: output,
+                configuration: .init(
+                    paperSize: .paperSize(),
+                    margins: .a4
+                )
+            )
+        
+        let contents_after = try FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil)
+               
+        #expect(contents_after.count == count)
         
         if cleanup {
             try FileManager.default.removeItems(at: output)
