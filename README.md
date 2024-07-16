@@ -1,6 +1,6 @@
 # HtmlToPdf
 
-This Swift package extends String to an easy-to-use interface for converting HTML strings into PDF documents on iOS and macOS.
+This Swift package extends String with a convenient interface for performantly converting HTML strings into PDF documents on iOS and macOS.
 
 ## Features
 
@@ -16,12 +16,12 @@ To install the package, add the following line to your `Package.swift` file:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/coenttb/swift-html-to-pdf.git", from: "0.0.0")
+    .package(url: "https://github.com/coenttb/swift-html-to-pdf.git", from: "0.1.0")
 ]
 ```
 
 ## Performance
-The package includes a test that prints 10.000 html strings to pdfs in roughly 20 seconds.
+The package includes a test that prints 1000 html strings to pdfs in 1.25 seconds.
 
 ```swift
     @Test func collection() async throws {
