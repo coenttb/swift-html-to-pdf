@@ -8,7 +8,7 @@ extension String {
 }
 
 extension Target.Dependency {
-    static let htmlToPdf: Self = .target(name: .htmlToPdf)
+    static var htmlToPdf: Self { .target(name: .htmlToPdf) }
 }
 
 let package = Package(
