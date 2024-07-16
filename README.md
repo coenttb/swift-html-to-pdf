@@ -19,7 +19,7 @@ dependencies: [
 ]
 ```
 
-and add the library to your target's dependencies:
+You can then make the HtmlToPdf available to your Package's target by including HtmlToPdf in your target's dependencies as follows:
 ```swift
 targets: [
     .target(
