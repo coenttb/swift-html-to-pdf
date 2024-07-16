@@ -21,12 +21,14 @@ dependencies: [
 
 and add the library to your target's dependencies:
 ```swift
-.target(
-    name: "TheNameOfYourTarget",
-    dependencies: [
-        .product(name: "HtmlToPdf", package: "swift-html-to-pdf")
-    ]
-)
+targets: [
+    .target(
+        name: "TheNameOfYourTarget",
+        dependencies: [
+            .product(name: "HtmlToPdf", package: "swift-html-to-pdf")
+        ]
+    )
+]
 ```
 
 ## Performance
