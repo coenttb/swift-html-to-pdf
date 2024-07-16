@@ -156,36 +156,9 @@ class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
         Task { @MainActor [window, configuration, outputURL, onFinished] in
             
             webView.frame = configuration.paperSize
-            
-//            let configuration = WKPDFConfiguration(configuration: configuration)
-            
-//            webView.createPDF(configuration: configuration) { result in
-//                switch result {
-//                case .success(let data):
-//                    do {
-//                        try FileManager.default.createDirectory(
-//                            at: outputURL.deletingLastPathComponent(),
-//                            withIntermediateDirectories: true,
-//                            attributes: nil
-//                        )
-//                        try data.write(to: outputURL)
-//                        print("PDF saved to \(outputURL.path)")
-//                    } catch {
-//                        Swift.print("Failed to save PDF: \(error)")
-//                    }
-//                case .failure(let error):
-//                    Swift.print("Failed to create PDF: \(error)")
-//                }
-//                if let onFinished {
-//                    onFinished()
-//                }
-//            }
-//            
-//
-            
-            
-            let printInfo = NSPrintInfo.pdf(url: outputURL)
-            let printOperation = NSPrintOperation(view: webView, printInfo: printInfo)
+
+            let printOperation = webView.printOperation(with: .pdf(url: outputURL))
+                       
             printOperation.showsPrintPanel = false
             printOperation.showsProgressPanel = false
             printOperation.runModal(for: window, delegate: PrintDelegate.init(onFinished: onFinished), didRun: #selector(printOperationDidRun(_:success:contextInfo:)), contextInfo: nil)

@@ -9,10 +9,6 @@
 import Foundation
 import WebKit
 
-
-
-
-
 extension String {
     /// Prints a single html string to a pdf at the given directory with the title and margins.
     ///
@@ -99,20 +95,6 @@ extension String {
         configuration: PDFConfiguration = .a4,
         using webView: WKWebView = WKWebView(frame: .zero)
     ) async throws {
-        let tempHTMLFileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("html")
-
-        do {
-            try self.write(to: tempHTMLFileURL, atomically: true, encoding: .utf8)
-        } catch {
-            throw error
-        }
-
-        defer {
-            try? FileManager.default.removeItem(at: tempHTMLFileURL)
-        }
-
-        let request = URLRequest(url: tempHTMLFileURL)
-
         let window = NSWindow()
         
         
@@ -121,11 +103,10 @@ extension String {
             outputURL: url,
             configuration: configuration
         )
-
+        
         webView.navigationDelegate = webViewNavigationDelegate
-//        webView.load(request)
         webView.loadHTMLString(self, baseURL: nil)
-
+        
         await withCheckedContinuation { continuation in
             webViewNavigationDelegate.onFinished = {
                 continuation.resume()
