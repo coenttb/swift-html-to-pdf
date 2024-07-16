@@ -1,6 +1,6 @@
 # HtmlToPdf
 
-This Swift package extends String with a convenient interface for performantly converting HTML strings into PDF documents on iOS and macOS.
+This Swift package extends String with an easy-to-use interface for performantly converting HTML strings into PDF documents on iOS and macOS.
 
 ## Features
 
