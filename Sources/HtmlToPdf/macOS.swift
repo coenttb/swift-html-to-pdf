@@ -1,5 +1,5 @@
 //
-//  swift-html-to-pdf | macOS.swift 
+//  swift-html-to-pdf | macOS.swift
 //
 //
 //  Created by Coen ten Thije Boonkkamp on 15/07/2024.
@@ -26,13 +26,13 @@ extension [Document] {
     ///   - configuration: The configuration that the pdfs will use.
     ///   - processorCount: In allmost all circumstances you can omit this parameter.
     ///
-
+    
     
     public func print(
         configuration: PDFConfiguration,
         processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
     ) async throws {
-        let webViewPool = await WebViewPool.shared
+        
         
         let stream = AsyncStream { continuation in
             Task {
@@ -43,18 +43,37 @@ extension [Document] {
             }
         }
         
-        
-        await withThrowingTaskGroup(of: Void.self) { taskGroup in
-            for _ in 0..<processorCount {
+        try await withThrowingTaskGroup(of: Void.self) { taskGroup in
+            for await document in stream {
                 taskGroup.addTask {
-                    for await document in stream {
-                        let webView = await webViewPool.acquire()
-                        try await document.print(configuration: configuration, using: webView)
-                        await webViewPool.release(webView)
+                    func acquireWithRetry(retries: Int = 8, delay: TimeInterval = 0.2) async throws -> WKWebView  {
+                        for retry in 0..<retries {
+                            guard let webView = await WebViewPool.shared.acquire() else {
+                                
+                                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                                continue
+                            }
+                            return webView
+                        }
+                        throw WebViewPool.Error.timeout
                     }
+                    
+                    let webView = try await acquireWithRetry()
+                    
+                    try await document.print(configuration: configuration, using: webView)
+                    
+                    await WebViewPool.shared.release(webView)
+                    
                 }
+                try await taskGroup.waitForAll()
             }
         }
+    }
+}
+
+extension WebViewPool {
+    enum Error: Swift.Error {
+        case timeout
     }
 }
 
@@ -70,16 +89,22 @@ class WebViewPool {
         self.semaphore = DispatchSemaphore(value: size)
     }
     
-    func acquire() -> WKWebView {
-        semaphore.wait()
-        return pool.removeFirst()
+    func acquire() -> WKWebView? {
+        if semaphore.wait(timeout: .now() + 100) == .success {
+            return pool.removeFirst()
+        } else {
+            return nil
+        }
     }
     
     func release(_ webView: WKWebView) {
+        defer {
+            
+            semaphore.signal()
+        }
         pool.append(webView)
-        semaphore.signal()
     }
-
+    
     static let shared: WebViewPool = .init(size: ProcessInfo.processInfo.activeProcessorCount)
 }
 
@@ -98,14 +123,15 @@ extension Document {
         
         webView.navigationDelegate = webViewNavigationDelegate
         
-        webView.loadHTMLString(self.html, baseURL: configuration.baseURL)
-        
         await withCheckedContinuation { continuation in
             let printDelegate = PrintDelegate {
                 continuation.resume()
             }
             webViewNavigationDelegate.printDelegate = printDelegate
+            webView.loadHTMLString(self.html, baseURL: configuration.baseURL)
         }
+        
+        
     }
 }
 
@@ -136,8 +162,6 @@ class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
             printOperation.showsProgressPanel = false
             printOperation.canSpawnSeparateThread = true
             
-            
-            
             printOperation.runModal(
                 for: webView.window ?? NSWindow(),
                 delegate: printDelegate,
@@ -158,6 +182,7 @@ class PrintDelegate: @unchecked Sendable {
     
     @objc func printOperationDidRun(_ printOperation: NSPrintOperation, success: Bool, contextInfo: UnsafeMutableRawPointer?) {
         Task { @MainActor in
+            
             self.onFinished()
         }
     }
@@ -217,7 +242,8 @@ extension String {
         to directory: URL,
         configuration: PDFConfiguration
     ) async throws {
-        try await Document(url: directory.appendingPathComponent(title, conformingTo: .pdf), html: self).print(configuration: configuration)
+        try await Document(url: directory.appendingPathComponent(title, conformingTo: .pdf), html: self)
+            .print(configuration: configuration)
     }
 }
 

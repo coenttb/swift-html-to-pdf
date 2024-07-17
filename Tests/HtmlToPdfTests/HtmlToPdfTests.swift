@@ -220,15 +220,14 @@ struct Local {
         let output = URL.localHtmlToPdf.appendingPathComponent("individual")
         
         try output.createDirectories()
+        
         try FileManager.default.removeItems(at: output)
         
         try await htmlString.print(title: "individual", to: output, configuration: .a4)
         
         #expect(FileManager.default.fileExists(atPath: output.path))
         
-        if cleanup {
-            try FileManager.default.removeItems(at: output)
-        }
+        if cleanup { try FileManager.default.removeItems(at: output) }
     }
     
     @Test() func collection() async throws {
