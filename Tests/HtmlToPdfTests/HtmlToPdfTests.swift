@@ -19,7 +19,10 @@ struct TemporaryDirectory {
         
         try directory.createDirectories()
         
-        try await htmlString.print(to: directory.appendingPathComponent("\(id.uuidString) test string").appendingPathExtension("pdf"), configuration: .a4)
+        let to = directory.appendingPathComponent("\(id.uuidString) test string").appendingPathExtension("pdf")
+        print(to)
+        
+        try await htmlString.print(to: to, configuration: .a4)
         
         let contents_after = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
         

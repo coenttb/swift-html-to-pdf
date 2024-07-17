@@ -197,9 +197,7 @@ extension String {
         to directory: URL,
         configuration: PDFConfiguration
     ) async throws {
-        try await [
-            Document(url: directory.appendingPathComponent(title, conformingTo: .pdf), html: self)
-        ].print(configuration: configuration)
+        try await Document(url: directory.appendingPathComponent(title, conformingTo: .pdf), html: self).print(configuration: configuration)
     }
 }
 
@@ -225,9 +223,7 @@ extension String {
         to url: URL,
         configuration: PDFConfiguration
     ) async throws {
-        try await [
-            Document(url: url, html: self)
-        ].print(configuration: configuration)
+        try await Document(url: url, html: self).print(configuration: configuration)
     }
 }
 
