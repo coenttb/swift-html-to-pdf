@@ -68,7 +68,7 @@ struct TemporaryDirectory {
                 to: output, configuration: .a4,
                 filename: { _ in UUID().uuidString }
             )
-       
+        
         let contents_after = try FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil)
         
         #expect(contents_after.count == (count * 2) )
@@ -84,27 +84,27 @@ struct TemporaryDirectory {
         
         let documents = [
             Document(
-                url: output.appendingPathComponent("file1").appendingPathExtension("pdf"),
+                url: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
                 html: htmlString
             ),
             Document(
-                url: output.appendingPathComponent("file2").appendingPathExtension("pdf"),
+                url: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
                 html: htmlString
             ),
             Document(
-                url: output.appendingPathComponent("file3").appendingPathExtension("pdf"),
+                url: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
                 html: htmlString
             ),
             Document(
-                url: output.appendingPathComponent("file4").appendingPathExtension("pdf"),
+                url: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
                 html: htmlString
             ),
             Document(
-                url: output.appendingPathComponent("file5").appendingPathExtension("pdf"),
+                url: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
                 html: htmlString
             ),
             Document(
-                url: output.appendingPathComponent("file6").appendingPathExtension("pdf"),
+                url: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
                 html: htmlString
             ),
         ]
@@ -153,62 +153,63 @@ struct TemporaryDirectory {
         try FileManager.default.removeItems(at: output)
     }
     
-//    @Test func collection_3() async throws {
-//        
-//        let output = URL.output()
-//        
-//        try output.createDirectories()
-//        
-//        let documents = [
-//            Document(
-//                url: output.appendingPathComponent("file1").appendingPathExtension("pdf"),
-//                html: "<html><body><h1>Hello, World 1!</h1></body></html>"
-//            ),
-//            Document(
-//                url: output.appendingPathComponent("file2").appendingPathExtension("pdf"),
-//                html: "<html><body><h1>Hello, World 2!</h1></body></html>"
-//            ),
-//            Document(
-//                url: output.appendingPathComponent("file3").appendingPathExtension("pdf"),
-//                html: "<html><body><h1>Hello, World 1!</h1></body></html>"
-//            ),
-//            Document(
-//                url: output.appendingPathComponent("file4").appendingPathExtension("pdf"),
-//                html: "<html><body><h1>Hello, World 2!</h1></body></html>"
-//            ),
-//            Document(
-//                url: output.appendingPathComponent("file5").appendingPathExtension("pdf"),
-//                html: "<html><body><h1>Hello, World 1!</h1></body></html>"
-//            ),
-//            Document(
-//                url: output.appendingPathComponent("file6").appendingPathExtension("pdf"),
-//                html: "<html><body><h1>Hello, World 2!</h1></body></html>"
-//            ),
-//        ]
-//        
-//        try await documents.print(
-//                to: output,
-//                configuration: .a4
-//            )
-        
-//        await [String].init(repeating: "<html><body><h1>Hello, World 2!</h1></body></html>", count: count)
-//            .print(
-//                to: output,
-//                filename: { _ in UUID().uuidString }
-//            )
-//        
-//        try await "<html><body><h1>Hello, World!</h1></body></html>".print(
-//            title: UUID().uuidString,
-//            to: output,
-//            configuration: .a4
-//        )
-        
-//        let contents_after = try FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil)
-//        
-//        #expect(contents_after.count == documents.count)
-//        
-//        try FileManager.default.removeItems(at: output)
-//    }
+        @Test func collection_3() async throws {
+    
+            let output = URL.output()
+    
+            try output.createDirectories()
+    
+            let documents = [
+                Document(
+                    url: output.appendingPathComponent("file1").appendingPathExtension("pdf"),
+                    html: "<html><body><h1>Hello, World 1!</h1></body></html>"
+                ),
+                Document(
+                    url: output.appendingPathComponent("file2").appendingPathExtension("pdf"),
+                    html: "<html><body><h1>Hello, World 2!</h1></body></html>"
+                ),
+                Document(
+                    url: output.appendingPathComponent("file3").appendingPathExtension("pdf"),
+                    html: "<html><body><h1>Hello, World 1!</h1></body></html>"
+                ),
+                Document(
+                    url: output.appendingPathComponent("file4").appendingPathExtension("pdf"),
+                    html: "<html><body><h1>Hello, World 2!</h1></body></html>"
+                ),
+                Document(
+                    url: output.appendingPathComponent("file5").appendingPathExtension("pdf"),
+                    html: "<html><body><h1>Hello, World 1!</h1></body></html>"
+                ),
+                Document(
+                    url: output.appendingPathComponent("file6").appendingPathExtension("pdf"),
+                    html: "<html><body><h1>Hello, World 2!</h1></body></html>"
+                ),
+            ]
+    
+            try await documents.print(
+                    configuration: .a4
+                )
+    
+            let count = 10
+            
+            try await [String].init(repeating: "<html><body><h1>Hello, World 2!</h1></body></html>", count: count)
+                .print(
+                    to: output,
+                    filename: { _ in UUID().uuidString }
+                )
+    
+            try await "<html><body><h1>Hello, World!</h1></body></html>".print(
+                title: UUID().uuidString,
+                to: output,
+                configuration: .a4
+            )
+    
+            let contents_after = try FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil)
+    
+            #expect(contents_after.count == documents.count + count + 1)
+    
+            try FileManager.default.removeItems(at: output)
+        }
 }
 #if os(macOS)
 
@@ -242,7 +243,7 @@ struct Local {
             .print(to: output)
         
         let contents_after = try FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil)
-               
+        
         #expect(contents_after.count == count)
         
         if cleanup {
