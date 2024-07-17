@@ -46,7 +46,7 @@ struct TemporaryDirectory {
         try FileManager.default.removeItems(at: output)
     }
     
-    @Test func collection_n_size_double() async throws {
+    @Test func collection_n_size_concurrently() async throws {
         let count = 10
         
         let output = URL.output()

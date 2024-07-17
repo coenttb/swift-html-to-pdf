@@ -127,7 +127,10 @@ extension String {
 
 extension PDFConfiguration {
     public static func a4(margins: EdgeInsets) -> PDFConfiguration {
-        return .init(paperSize: .a4(), margins: margins)
+        return .init(
+            margins: margins,
+            paperSize: .a4()
+        )
     }
 }
 
