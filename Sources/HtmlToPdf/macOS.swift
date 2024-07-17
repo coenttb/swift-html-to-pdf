@@ -60,13 +60,22 @@ extension [Document] {
 
 extension Document {
     @MainActor
+    public func print(
+        configuration: PDFConfiguration
+    ) async throws {
+        try await [self].print(configuration: configuration)
+    }
+}
+
+extension Document {
+    @MainActor
     internal func print(
         configuration: PDFConfiguration,
         using webView: WKWebView = WKWebView(frame: .zero)
     ) async throws {
 
         let webViewNavigationDelegate = WebViewNavigationDelegate(
-            outputURL: self.url,
+            outputURL: self.fileUrl,
             configuration: configuration
         )
 
