@@ -232,7 +232,7 @@ struct Local {
     
     @Test() func collection() async throws {
         let output = URL.localHtmlToPdf.appendingPathComponent("collection")
-        let count = 10
+        let count = 100
         
         try output.createDirectories()
         try FileManager.default.removeItems(at: output)

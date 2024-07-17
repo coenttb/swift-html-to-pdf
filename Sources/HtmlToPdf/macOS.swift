@@ -33,7 +33,6 @@ extension [Document] {
         processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
     ) async throws {
         
-        
         let stream = AsyncStream { continuation in
             Task {
                 for document in self {
@@ -46,19 +45,8 @@ extension [Document] {
         try await withThrowingTaskGroup(of: Void.self) { taskGroup in
             for await document in stream {
                 taskGroup.addTask {
-                    func acquireWithRetry(retries: Int = 8, delay: TimeInterval = 0.2) async throws -> WKWebView  {
-                        for retry in 0..<retries {
-                            guard let webView = await WebViewPool.shared.acquire() else {
-                                
-                                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-                                continue
-                            }
-                            return webView
-                        }
-                        throw WebViewPool.Error.timeout
-                    }
                     
-                    let webView = try await acquireWithRetry()
+                    let webView = try await WebViewPool.shared.acquireWithRetry()
                     
                     try await document.print(configuration: configuration, using: webView)
                     
@@ -97,9 +85,20 @@ class WebViewPool {
         }
     }
     
+    func acquireWithRetry(retries: Int = 8, delay: TimeInterval = 0.2) async throws -> WKWebView  {
+        for _ in 0..<retries {
+            guard let webView = self.acquire() else {
+                
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                continue
+            }
+            return webView
+        }
+        throw WebViewPool.Error.timeout
+    }
+    
     func release(_ webView: WKWebView) {
         defer {
-            
             semaphore.signal()
         }
         pool.append(webView)
