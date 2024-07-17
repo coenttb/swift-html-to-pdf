@@ -29,14 +29,17 @@ extension Sequence<Document> where Self: Sendable {
     ///   - configuration: The configuration that the pdfs will use.
     ///
     public func print(
-        configuration: PDFConfiguration
+        configuration: PDFConfiguration,
+        createDirectories: Bool = true
     ) async throws {
-        try await withThrowingTaskGroup(of: Void.self) { taskGroup in
+        await withThrowingTaskGroup(of: Void.self) { taskGroup in
             for document in self {
                 taskGroup.addTask {
+                    if createDirectories {
+                        try FileManager.default.createDirectory(at: document.fileUrl.deletingPathExtension().deletingLastPathComponent(), withIntermediateDirectories: true)
+                    }
                     try await document.print(configuration: configuration)
                 }
-                try await taskGroup.waitForAll()
             }
         }
     }

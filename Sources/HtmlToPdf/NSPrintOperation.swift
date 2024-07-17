@@ -29,28 +29,31 @@ extension Sequence<Document> where Self: Sendable {
     
     public func print(
         configuration: PDFConfiguration,
-        processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
+        processorCount: Int = ProcessInfo.processInfo.activeProcessorCount,
+        createDirectories: Bool = true
     ) async throws {
 
-        let stream = AsyncStream<Document> { continuation in
-            Task {
-                for document in self {
-                    continuation.yield(document)
-                }
-                continuation.finish()
-            }
-        }
+//        let stream = AsyncStream<Document> { continuation in
+//            Task {
+//                for document in self {
+//                    continuation.yield(document)
+//                }
+//                continuation.finish()
+//            }
+//        }
         
         try await withThrowingTaskGroup(of: Void.self) { taskGroup in
-            for await document in stream {
+            for document in self {
                 taskGroup.addTask {
                     let webView = try await WebViewPool.shared.acquireWithRetry()
+                    if createDirectories {
+                        try FileManager.default.createDirectory(at: document.fileUrl.deletingPathExtension().deletingLastPathComponent(), withIntermediateDirectories: true)
+                    }                    
                     try await document.print(configuration: configuration, using: webView)
                     await WebViewPool.shared.release(webView)
                 }
                 try await taskGroup.waitForAll()
             }
-            
         }
     }
 }
