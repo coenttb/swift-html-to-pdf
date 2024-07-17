@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import WebKit
 
 extension String {
     /// Prints a single html string to a PDF at the given URL, with the given margins.
@@ -66,7 +65,7 @@ extension String {
     }
 }
 
-extension [String] {
+extension Sequence<String> {
     /// Prints a collection of String to PDF's at the given directory.
     ///
     /// ## Example
@@ -99,9 +98,7 @@ extension [String] {
                     html: html
                 )
             }
-            .print(
-                configuration: configuration
-            )
+            .print(configuration: configuration)
     }
 }
 
@@ -198,3 +195,4 @@ extension CGSize {
         CGSize(width: 595.22, height: 841.85)
     }
 }
+

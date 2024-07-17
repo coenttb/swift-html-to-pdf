@@ -210,7 +210,7 @@ struct TemporaryDirectory {
         try FileManager.default.removeItems(at: output)
     }
 }
-#if os(macOS)
+#if os(macOS) || targetEnvironment(macCatalyst)
 
 @Suite("Local")
 struct Local {
@@ -232,7 +232,7 @@ struct Local {
 
     @Test() func collection() async throws {
         let output = URL.localHtmlToPdf.appendingPathComponent("collection")
-        let count = 100
+        let count = 1000
 
         try output.createDirectories()
         try FileManager.default.removeItems(at: output)

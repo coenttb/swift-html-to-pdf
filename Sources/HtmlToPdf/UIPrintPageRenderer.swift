@@ -5,14 +5,14 @@
 //  Created by Coen ten Thije Boonkkamp on 15/07/2024.
 //
 
-#if os(iOS)
+#if canImport(UIKit)
 
 import Foundation
 import UIKit
 import WebKit
 
-extension [Document] {
-    /// Prints documents  to pdf's at the given directory.
+extension Sequence<Document> where Self: Sendable {
+    /// Prints a sequence of ``Document``  to PDFs at the given directory.
     ///
     /// ## Example
     /// ```swift
@@ -31,21 +31,10 @@ extension [Document] {
     public func print(
         configuration: PDFConfiguration
     ) async throws {
-        let stream = AsyncStream { continuation in
-            Task {
-                for document in self {
-                    continuation.yield(document)
-                }
-                continuation.finish()
-            }
-        }
-
         try await withThrowingTaskGroup(of: Void.self) { taskGroup in
-            for await document in stream {
+            for document in self {
                 taskGroup.addTask {
-
                     try await document.print(configuration: configuration)
-
                 }
                 try await taskGroup.waitForAll()
             }
@@ -54,7 +43,7 @@ extension [Document] {
 }
 
 extension Document {
-    /// Prints a single ``Document`` to a PDF at the given directory with the title and margins.
+    /// Prints a ``Document`` to PDF with the given configuration.
     ///
     /// This function is more convenient when you have a directory and just want to title the PDF and save it to the directory.
     ///
@@ -74,7 +63,7 @@ extension Document {
     ) async throws {
         let renderer = UIPrintPageRenderer()
 
-        let printFormatter = UIMarkupTextPrintFormatter(markupText: html)
+        let printFormatter = UIMarkupTextPrintFormatter(markupText: self.html)
 
         renderer.addPrintFormatter(printFormatter, startingAtPageAt: 0)
 
