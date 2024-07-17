@@ -8,14 +8,11 @@
 import Foundation
 import HtmlToPdf
 
-
-
-
 extension URL {
     static func output(id: UUID = .init()) -> Self {
         FileManager.default.temporaryDirectory.appendingPathComponent("html-to-pdf").appendingPathComponent(id.uuidString)
     }
-    
+
     static var localHtmlToPdf: Self {
         #if os(macOS)
         return URL.documentsDirectory.appendingPathComponent("HtmlToPdf")

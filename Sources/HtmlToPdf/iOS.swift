@@ -39,13 +39,13 @@ extension [Document] {
                 continuation.finish()
             }
         }
-        
+
         try await withThrowingTaskGroup(of: Void.self) { taskGroup in
             for await document in stream {
                 taskGroup.addTask {
-                    
+
                     try await document.print(configuration: configuration)
-                    
+
                 }
                 try await taskGroup.waitForAll()
             }
@@ -72,30 +72,30 @@ extension Document {
     public func print(
         configuration: PDFConfiguration
     ) async throws {
-        let renderer = UIPrintPageRenderer.init()
-        
+        let renderer = UIPrintPageRenderer()
+
         let printFormatter = UIMarkupTextPrintFormatter(markupText: html)
-        
+
         renderer.addPrintFormatter(printFormatter, startingAtPageAt: 0)
-        
-        let paperRect = CGRect.init(origin: .zero, size: configuration.paperSize)
-        
+
+        let paperRect = CGRect(origin: .zero, size: configuration.paperSize)
+
         renderer.setValue(NSValue(cgRect: paperRect), forKey: "paperRect")
         renderer.setValue(NSValue(cgRect: configuration.printableRect), forKey: "printableRect")
-        
+
         let pdfData = NSMutableData()
         UIGraphicsBeginPDFContextToData(pdfData, paperRect, nil)
         renderer.prepare(forDrawingPages: NSRange(location: 0, length: renderer.numberOfPages))
-        
+
         let bounds = UIGraphicsGetPDFContextBounds()
-        
+
         for i in 0..<renderer.numberOfPages {
             UIGraphicsBeginPDFPage()
             renderer.drawPage(at: i, in: bounds)
         }
-        
+
         UIGraphicsEndPDFContext()
-        
+
         try pdfData.write(to: self.fileUrl)
     }
 }
@@ -118,7 +118,7 @@ extension CGSize {
 extension UIEdgeInsets {
     init(
         edgeInsets: EdgeInsets
-    ){
+    ) {
         self = .init(
             top: .init(edgeInsets.top),
             left: .init(edgeInsets.left),

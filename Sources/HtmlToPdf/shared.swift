@@ -122,7 +122,7 @@ extension [String] {
 public struct Document: Sendable {
     let fileUrl: URL
     let html: String
-    
+
     public init(
         fileUrl: URL,
         html: String
@@ -136,13 +136,13 @@ public struct PDFConfiguration: Sendable {
     let paperSize: CGSize
     let margins: EdgeInsets
     let baseURL: URL?
-    
+
     var printableRect: CGRect {
         let pageWidth: CGFloat = paperSize.width
         let pageHeight: CGFloat = paperSize.height
         let printableWidth = pageWidth - margins.left - margins.right
         let printableHeight = pageHeight - margins.top - margins.bottom
-        
+
         return CGRect(
             x: margins.left,
             y: margins.top,
@@ -150,7 +150,7 @@ public struct PDFConfiguration: Sendable {
             height: printableHeight
         )
     }
-    
+
     public init(
         margins: EdgeInsets,
         paperSize: CGSize = .paperSize(),
@@ -173,7 +173,7 @@ public struct EdgeInsets: Sendable {
     let left: CGFloat
     let bottom: CGFloat
     let right: CGFloat
-    
+
     public init(top: CGFloat, left: CGFloat, bottom: CGFloat, right: CGFloat) {
         self.top = top
         self.left = left
