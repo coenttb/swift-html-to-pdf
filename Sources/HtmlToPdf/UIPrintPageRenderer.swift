@@ -11,7 +11,7 @@ import Foundation
 import UIKit
 import WebKit
 
-extension Sequence<Document> where Self: Sendable {
+extension Sequence<Document> {
     /// Prints a sequence of ``Document``  to PDFs at the given directory.
     ///
     /// ## Example

@@ -129,22 +129,25 @@ public struct Document: Sendable {
     }
 }
 
+/// The configurations used to print to PDF
+///
+///
+/// - Parameters:
+///   - paperSize: The size of the paper, including margins.
+///   - margins: The margins that are applied to each page of the PDF.
+///   - baseURL: The base URL to use when the system resolves relative URLs within the HTML string of the PDF.
+///
 public struct PDFConfiguration: Sendable {
     let paperSize: CGSize
     let margins: EdgeInsets
     let baseURL: URL?
 
     var printableRect: CGRect {
-        let pageWidth: CGFloat = paperSize.width
-        let pageHeight: CGFloat = paperSize.height
-        let printableWidth = pageWidth - margins.left - margins.right
-        let printableHeight = pageHeight - margins.top - margins.bottom
-
-        return CGRect(
+        .init(
             x: margins.left,
             y: margins.top,
-            width: printableWidth,
-            height: printableHeight
+            width: paperSize.width - margins.left - margins.right,
+            height: paperSize.height - margins.top - margins.bottom
         )
     }
 
@@ -195,4 +198,3 @@ extension CGSize {
         CGSize(width: 595.22, height: 841.85)
     }
 }
-

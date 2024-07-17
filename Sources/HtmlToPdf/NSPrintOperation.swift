@@ -9,7 +9,7 @@
 import Foundation
 import WebKit
 
-extension Sequence<Document> where Self: Sendable {
+extension Sequence<Document> {
     /// Prints ``Document``s  to PDF's at the given directory.
     ///
     /// ## Example
@@ -32,23 +32,13 @@ extension Sequence<Document> where Self: Sendable {
         processorCount: Int = ProcessInfo.processInfo.activeProcessorCount,
         createDirectories: Bool = true
     ) async throws {
-
-//        let stream = AsyncStream<Document> { continuation in
-//            Task {
-//                for document in self {
-//                    continuation.yield(document)
-//                }
-//                continuation.finish()
-//            }
-//        }
-        
         try await withThrowingTaskGroup(of: Void.self) { taskGroup in
             for document in self {
                 taskGroup.addTask {
                     let webView = try await WebViewPool.shared.acquireWithRetry()
                     if createDirectories {
                         try FileManager.default.createDirectory(at: document.fileUrl.deletingPathExtension().deletingLastPathComponent(), withIntermediateDirectories: true)
-                    }                    
+                    }
                     try await document.print(configuration: configuration, using: webView)
                     await WebViewPool.shared.release(webView)
                 }
