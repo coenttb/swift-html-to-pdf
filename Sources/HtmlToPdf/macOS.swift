@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  swift-html-to-pdf | macOS.swift 
 //
 //
 //  Created by Coen ten Thije Boonkkamp on 15/07/2024.
@@ -26,11 +26,13 @@ extension [Document] {
     ///   - configuration: The configuration that the pdfs will use.
     ///   - processorCount: In allmost all circumstances you can omit this parameter.
     ///
+
+    
     public func print(
         configuration: PDFConfiguration,
         processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
     ) async throws {
-        let webViewPool = await WebViewPool(size: processorCount)
+        let webViewPool = await WebViewPool.shared
         
         let stream = AsyncStream { continuation in
             Task {
@@ -40,6 +42,7 @@ extension [Document] {
                 continuation.finish()
             }
         }
+        
         
         await withThrowingTaskGroup(of: Void.self) { taskGroup in
             for _ in 0..<processorCount {
@@ -60,7 +63,7 @@ class WebViewPool {
     private var pool: [WKWebView]
     private let semaphore: DispatchSemaphore
     
-    init(size: Int) {
+    private init(size: Int) {
         self.pool = (0..<size).map { _ in
             WKWebView(frame: .zero)
         }
@@ -76,45 +79,32 @@ class WebViewPool {
         pool.append(webView)
         semaphore.signal()
     }
+
+    static let shared: WebViewPool = .init(size: ProcessInfo.processInfo.activeProcessorCount)
 }
 
 extension Document {
-    /// Prints a single document to a pdf at the given configuration.
-    ///
-    /// This function is more convenient when you have a directory and just want to title the pdf and save it to the directory.
-    ///
-    /// ## Example
-    /// ```swift
-    ///  let html = "<html><body><h1>Hello, World!</h1></body></html>"
-    ///  try await html.print(
-    ///     title: "helloWorld",
-    ///     to: .downloadsDirectory
-    ///  )
-    /// ```
-    ///
-    /// - Parameters:
-    ///   - title: The title of the pdf
-    ///   - directory: The directory at which to print the pdf
-    ///   - configuration: The configuration of the pdf document.
-    ///
-    /// - Throws: `Error` if the function cannot clean up the temporary .html file it creates.
+    
     @MainActor
-    public func print(
+    internal func print(
         configuration: PDFConfiguration,
         using webView: WKWebView = WKWebView(frame: .zero)
     ) async throws {
+        
         let webViewNavigationDelegate = WebViewNavigationDelegate(
             outputURL: self.url,
             configuration: configuration
         )
         
         webView.navigationDelegate = webViewNavigationDelegate
+        
         webView.loadHTMLString(self.html, baseURL: configuration.baseURL)
         
         await withCheckedContinuation { continuation in
-            webViewNavigationDelegate.printDelegate = .init {
+            let printDelegate = PrintDelegate {
                 continuation.resume()
             }
+            webViewNavigationDelegate.printDelegate = printDelegate
         }
     }
 }
@@ -165,10 +155,38 @@ class PrintDelegate: @unchecked Sendable {
     }
     
     @objc func printOperationDidRun(_ printOperation: NSPrintOperation, success: Bool, contextInfo: UnsafeMutableRawPointer?) {
-        // Not sure if this is needed.
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.onFinished()
         }
+    }
+}
+
+
+extension Document {
+    /// Prints a single document to a pdf at the given configuration.
+    ///
+    /// This function is more convenient when you have a directory and just want to title the pdf and save it to the directory.
+    ///
+    /// ## Example
+    /// ```swift
+    ///  let html = "<html><body><h1>Hello, World!</h1></body></html>"
+    ///  try await html.print(
+    ///     title: "helloWorld",
+    ///     to: .downloadsDirectory
+    ///  )
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - title: The title of the pdf
+    ///   - directory: The directory at which to print the pdf
+    ///   - configuration: The configuration of the pdf document.
+    ///
+    /// - Throws: `Error` if the function cannot clean up the temporary .html file it creates.
+    @MainActor
+    public func print(
+        configuration: PDFConfiguration
+    ) async throws {
+        try await [self].print(configuration: configuration)
     }
 }
 

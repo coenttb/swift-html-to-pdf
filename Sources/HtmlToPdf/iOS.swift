@@ -1,6 +1,6 @@
 //
-//  File.swift
-//  
+//  swift-html-to-pdf | iOS.swift
+//
 //
 //  Created by Coen ten Thije Boonkkamp on 15/07/2024.
 //
@@ -29,8 +29,7 @@ extension [Document] {
     ///   - processorCount: In allmost all circumstances you can omit this parameter.
     ///
     public func print(
-        configuration: PDFConfiguration,
-        processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
+        configuration: PDFConfiguration
     ) async throws {
         let stream = AsyncStream { continuation in
             Task {

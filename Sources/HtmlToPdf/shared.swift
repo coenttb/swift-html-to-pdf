@@ -1,3 +1,10 @@
+//
+//  swift-html-to-pdf | shared.swift
+//
+//
+//  Created by Coen ten Thije Boonkkamp on 15/07/2024.
+//
+
 import Foundation
 import WebKit
 
@@ -23,8 +30,7 @@ extension [String] {
     public func print(
         to directory: URL,
         configuration: PDFConfiguration = .a4,
-        filename: (Int) -> String = { index in "\(index + 1)" },
-        processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
+        filename: (Int) -> String = { index in "\(index + 1)" }
     ) async throws {
         try await self.enumerated()
             .map { (index, html) in
@@ -36,8 +42,7 @@ extension [String] {
                 )
             }
             .print(
-                configuration: configuration,
-                processorCount: processorCount
+                configuration: configuration
             )
     }
 }

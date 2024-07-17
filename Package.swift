@@ -4,7 +4,7 @@
 import PackageDescription
 
 extension String {
-    static let htmlToPdf: Self = "HtmlToPdf"
+    static var htmlToPdf: Self { "HtmlToPdf" }
 }
 
 extension Target.Dependency {
