@@ -83,27 +83,27 @@ struct TemporaryDirectory {
 
         let documents = [
             Document(
-                url: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
+                fileUrl: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
                 html: htmlString
             ),
             Document(
-                url: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
+                fileUrl: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
                 html: htmlString
             ),
             Document(
-                url: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
+                fileUrl: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
                 html: htmlString
             ),
             Document(
-                url: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
+                fileUrl: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
                 html: htmlString
             ),
             Document(
-                url: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
+                fileUrl: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
                 html: htmlString
             ),
             Document(
-                url: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
+                fileUrl: output.appendingPathComponent(UUID().uuidString).appendingPathExtension("pdf"),
                 html: htmlString
             )
         ]
@@ -160,27 +160,27 @@ struct TemporaryDirectory {
 
         let documents = [
             Document(
-                url: output.appendingPathComponent("file1").appendingPathExtension("pdf"),
+                fileUrl: output.appendingPathComponent("file1").appendingPathExtension("pdf"),
                 html: "<html><body><h1>Hello, World 1!</h1></body></html>"
             ),
             Document(
-                url: output.appendingPathComponent("file2").appendingPathExtension("pdf"),
+                fileUrl: output.appendingPathComponent("file2").appendingPathExtension("pdf"),
                 html: "<html><body><h1>Hello, World 2!</h1></body></html>"
             ),
             Document(
-                url: output.appendingPathComponent("file3").appendingPathExtension("pdf"),
+                fileUrl: output.appendingPathComponent("file3").appendingPathExtension("pdf"),
                 html: "<html><body><h1>Hello, World 1!</h1></body></html>"
             ),
             Document(
-                url: output.appendingPathComponent("file4").appendingPathExtension("pdf"),
+                fileUrl: output.appendingPathComponent("file4").appendingPathExtension("pdf"),
                 html: "<html><body><h1>Hello, World 2!</h1></body></html>"
             ),
             Document(
-                url: output.appendingPathComponent("file5").appendingPathExtension("pdf"),
+                fileUrl: output.appendingPathComponent("file5").appendingPathExtension("pdf"),
                 html: "<html><body><h1>Hello, World 1!</h1></body></html>"
             ),
             Document(
-                url: output.appendingPathComponent("file6").appendingPathExtension("pdf"),
+                fileUrl: output.appendingPathComponent("file6").appendingPathExtension("pdf"),
                 html: "<html><body><h1>Hello, World 2!</h1></body></html>"
             )
         ]
