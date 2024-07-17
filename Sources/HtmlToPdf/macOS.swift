@@ -10,7 +10,7 @@ import Foundation
 import WebKit
 
 extension [Document] {
-    /// Prints documents  to pdf's at the given directory.
+    /// Prints documents  to PDF's at the given directory.
     ///
     /// ## Example
     /// ```swift
@@ -23,17 +23,16 @@ extension [Document] {
     /// ```
     ///
     /// - Parameters:
-    ///   - configuration: The configuration that the pdfs will use.
+    ///   - configuration: The configuration that the PDFs will use.
     ///   - processorCount: In allmost all circumstances you can omit this parameter.
     ///
-    
     
     public func print(
         configuration: PDFConfiguration,
         processorCount: Int = ProcessInfo.processInfo.activeProcessorCount
     ) async throws {
         
-        let stream = AsyncStream { continuation in
+        let stream = AsyncStream<Document> { continuation in
             Task {
                 for document in self {
                     continuation.yield(document)
@@ -41,27 +40,7 @@ extension [Document] {
                 continuation.finish()
             }
         }
-        
-//        A previous version worked like this and was much faster. However, it also caused
-//        the tests to fail roughly half the time.
-//
-//        try await withThrowingTaskGroup(of: Void.self) { taskGroup in
-//            for _ in 0..<processorCount {
-//                taskGroup.addTask {
-//                    for await document in stream {
-//
-//                        let webView = try await WebViewPool.shared.acquireWithRetry()
-//
-//                        try await document.print(configuration: configuration, using: webView)
-//                        
-//                        await WebViewPool.shared.release(webView)
-//                    }
-//                }
-//            }
-//            try await taskGroup.waitForAll() // Wait for all tasks to complete
-//        }
-    
-        
+
         try await withThrowingTaskGroup(of: Void.self) { taskGroup in
             for await document in stream {
                 taskGroup.addTask {
@@ -79,11 +58,30 @@ extension [Document] {
     }
 }
 
-extension WebViewPool {
-    enum Error: Swift.Error {
-        case timeout
+extension Document {
+    @MainActor
+    internal func print(
+        configuration: PDFConfiguration,
+        using webView: WKWebView = WKWebView(frame: .zero)
+    ) async throws {
+        
+        let webViewNavigationDelegate = WebViewNavigationDelegate(
+            outputURL: self.url,
+            configuration: configuration
+        )
+        
+        webView.navigationDelegate = webViewNavigationDelegate
+        
+        await withCheckedContinuation { continuation in
+            let printDelegate = PrintDelegate {
+                continuation.resume()
+            }
+            webViewNavigationDelegate.printDelegate = printDelegate
+            webView.loadHTMLString(self.html, baseURL: configuration.baseURL)
+        }
     }
 }
+
 
 @MainActor
 class WebViewPool {
@@ -127,30 +125,9 @@ class WebViewPool {
     static let shared: WebViewPool = .init(size: ProcessInfo.processInfo.activeProcessorCount)
 }
 
-extension Document {
-    
-    @MainActor
-    internal func print(
-        configuration: PDFConfiguration,
-        using webView: WKWebView = WKWebView(frame: .zero)
-    ) async throws {
-        
-        let webViewNavigationDelegate = WebViewNavigationDelegate(
-            outputURL: self.url,
-            configuration: configuration
-        )
-        
-        webView.navigationDelegate = webViewNavigationDelegate
-        
-        await withCheckedContinuation { continuation in
-            let printDelegate = PrintDelegate {
-                continuation.resume()
-            }
-            webViewNavigationDelegate.printDelegate = printDelegate
-            webView.loadHTMLString(self.html, baseURL: configuration.baseURL)
-        }
-        
-        
+extension WebViewPool {
+    enum Error: Swift.Error {
+        case timeout
     }
 }
 
@@ -204,91 +181,6 @@ class PrintDelegate: @unchecked Sendable {
             
             self.onFinished()
         }
-    }
-}
-
-
-extension Document {
-    /// Prints a single document to a pdf at the given configuration.
-    ///
-    /// This function is more convenient when you have a directory and just want to title the pdf and save it to the directory.
-    ///
-    /// ## Example
-    /// ```swift
-    ///  let html = "<html><body><h1>Hello, World!</h1></body></html>"
-    ///  try await html.print(
-    ///     title: "helloWorld",
-    ///     to: .downloadsDirectory
-    ///  )
-    /// ```
-    ///
-    /// - Parameters:
-    ///   - title: The title of the pdf
-    ///   - directory: The directory at which to print the pdf
-    ///   - configuration: The configuration of the pdf document.
-    ///
-    /// - Throws: `Error` if the function cannot clean up the temporary .html file it creates.
-    @MainActor
-    public func print(
-        configuration: PDFConfiguration
-    ) async throws {
-        try await [self].print(configuration: configuration)
-    }
-}
-
-extension String {
-    /// Prints a single html string to a pdf at the given directory with the title and margins.
-    ///
-    /// This function is more convenient when you have a directory and just want to title the pdf and save it to the directory.
-    ///
-    /// ## Example
-    /// ```swift
-    ///  let html = "<html><body><h1>Hello, World!</h1></body></html>"
-    ///  try await html.print(
-    ///     title: "helloWorld",
-    ///     to: .downloadsDirectory
-    ///  )
-    /// ```
-    ///
-    /// - Parameters:
-    ///   - title: The title of the pdf
-    ///   - directory: The directory at which to print the pdf
-    ///   - configuration: The configuration of the pdf document.
-    ///
-    /// - Throws: `Error` if the function cannot clean up the temporary .html file it creates.
-    public func print(
-        title: String,
-        to directory: URL,
-        configuration: PDFConfiguration
-    ) async throws {
-        try await Document(url: directory.appendingPathComponent(title, conformingTo: .pdf), html: self)
-            .print(configuration: configuration)
-    }
-}
-
-extension String {
-    /// Prints a single html string to a pdf at the given URL, with the given margins.
-    ///
-    /// ## Example
-    /// ```swift
-    /// let html = "<html><body><h1>Hello, World!</h1></body></html>"
-    /// let url = URL.downloadsDirectory
-    ///     .appendingPathComponent("helloWorld", conformingTo: .pdf)
-    /// try await html.print(to:url)
-    /// ```
-    ///
-    /// - Parameters:
-    ///   - url: The url at which to print the pdf
-    ///   - configuration: The configuration of the pdf document.
-    ///
-    /// - Throws: `Error` if the function cannot clean up the temporary .html file it creates.
-    ///
-    @MainActor
-    public func print(
-        to url: URL,
-        configuration: PDFConfiguration
-    ) async throws {
-        try await Document(url: url, html: self).print(configuration: configuration)
     }
 }
 

@@ -15,7 +15,7 @@ struct TemporaryDirectory {
     @Test() func individual() async throws {
         
         let id = UUID()
-        let directory = URL.output(id: id).appending(path: "individual")
+        let directory = URL.output(id: id).appendingPathComponent("individual")
         
         try directory.createDirectories()
         
