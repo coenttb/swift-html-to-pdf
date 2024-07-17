@@ -42,6 +42,26 @@ extension [Document] {
             }
         }
         
+//        A previous version worked like this and was much faster. However, it also caused
+//        the tests to fail roughly half the time.
+//
+//        try await withThrowingTaskGroup(of: Void.self) { taskGroup in
+//            for _ in 0..<processorCount {
+//                taskGroup.addTask {
+//                    for await document in stream {
+//
+//                        let webView = try await WebViewPool.shared.acquireWithRetry()
+//
+//                        try await document.print(configuration: configuration, using: webView)
+//                        
+//                        await WebViewPool.shared.release(webView)
+//                    }
+//                }
+//            }
+//            try await taskGroup.waitForAll() // Wait for all tasks to complete
+//        }
+    
+        
         try await withThrowingTaskGroup(of: Void.self) { taskGroup in
             for await document in stream {
                 taskGroup.addTask {
