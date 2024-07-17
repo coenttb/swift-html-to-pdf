@@ -136,6 +136,8 @@ class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
             printOperation.showsProgressPanel = false
             printOperation.canSpawnSeparateThread = true
             
+            
+            
             printOperation.runModal(
                 for: webView.window ?? NSWindow(),
                 delegate: printDelegate,
