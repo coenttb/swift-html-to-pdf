@@ -11,7 +11,7 @@ HtmlToPdf provides an easy-to-use interface for concurrently printing HTML to PD
 
 ## Performance
 
-The package includes a test that prints 1000 HTML strings to PDFs in ~2.6 seconds (using UIPrintPageRenderer on iOS or Mac Catalyst ) or ~12 seconds (using NSPrintOperation on MacOS).
+The package includes a test that prints 1000 HTML strings to PDFs in ~2.6 seconds (using UIPrintPageRenderer on iOS or Mac Catalyst) or ~12 seconds (using NSPrintOperation on MacOS).
 
 ```swift
 @Test func collection() async throws {
