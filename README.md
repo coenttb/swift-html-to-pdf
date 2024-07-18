@@ -11,7 +11,7 @@ HtmlToPdf provides an easy-to-use interface for concurrently printing HTML to PD
 
 ## Performance
 
-The package includes a test that prints 1000 HTML strings to PDFs in ~2.6 seconds (using UIPrintPageRenderer on iOS or Mac Catalyst) or ~12 seconds (using NSPrintOperation on MacOS).
+The package includes a test that prints 1000 HTML strings to PDFs in ~2.6 seconds (using ``UIPrintPageRenderer`` on iOS or Mac Catalyst) or ~12 seconds (using ``NSPrintOperation`` on MacOS).
 
 ```swift
 @Test func collection() async throws {
@@ -57,11 +57,11 @@ try await [
 
 Optionally, you can invoke an overload that returns an ``AsyncStream<URL>`` that yields the URL of each printed PDF.
 > [!NOTE] 
-> You need to include the AsyncStream type in the variable declaration, otherwise the return value will be Void.
+> You need to include the ``AsyncStream`` type signature in the variable declaration, otherwise the return value will be Void.
 
 ```swift
 let directory = URL(...)
-let urls: AsyncStream = try await [
+let urls: **AsyncStream** = try await [
     html,
     html,
     html,
