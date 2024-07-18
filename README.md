@@ -21,7 +21,7 @@ The package includes a test that prints 1000 HTML strings to PDFs in ~2.6 second
         repeating: "<html><body><h1>Hello, World 1!</h1></body></html>",
         count: count
     )
-    .print(to: output)
+    .print(to: URL(...))
     [...]
 }
 ```
