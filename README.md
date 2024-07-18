@@ -9,28 +9,6 @@ HtmlToPdf provides an easy-to-use interface for printing HTML to PDF on iOS and 
 - Customize margins for PDF documents.
 - Swift 6 language mode enabled
 
-## Installation
-
-To install the package, add the following line to your `Package.swift` file:
-
-```swift
-dependencies: [
-    .package(url: "https://github.com/coenttb/swift-html-to-pdf.git", from: "0.1.0")
-]
-```
-
-You can then make HtmlToPdf available to your Package's target by including HtmlToPdf in your target's dependencies as follows:
-```swift
-targets: [
-    .target(
-        name: "TheNameOfYourTarget",
-        dependencies: [
-            .product(name: "HtmlToPdf", package: "swift-html-to-pdf")
-        ]
-    )
-]
-```
-
 ## Performance
 The package includes a test that prints 1000 html strings to pdfs in 11 seconds.
 
@@ -75,3 +53,45 @@ try await [
 .print(to: directory)
 ```
 
+## Examples
+
+Optionally, you can invoke an overload that returns an ``AsyncStream<URL>`` that yields the URL of each printed PDF.
+> [!NOTE] 
+> it is required to include the ``AsyncStream`` in the variable declaration.
+
+```swift
+let directory = URL(...)
+let urls: AsyncStream = try await [
+    html,
+    html,
+    html,
+    ....
+]
+.print(to: directory)
+
+for await url in urls {
+    Swift.print(url)
+}
+```
+
+## Installation
+
+To install the package, add the following line to your `Package.swift` file:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/coenttb/swift-html-to-pdf.git", from: "0.1.0")
+]
+```
+
+You can then make HtmlToPdf available to your Package's target by including HtmlToPdf in your target's dependencies as follows:
+```swift
+targets: [
+    .target(
+        name: "TheNameOfYourTarget",
+        dependencies: [
+            .product(name: "HtmlToPdf", package: "swift-html-to-pdf")
+        ]
+    )
+]
+```
