@@ -1,6 +1,6 @@
 # HtmlToPdf
 
-HtmlToPdf provides an easy-to-use interface for printing HTML to PDF on iOS and macOS.
+HtmlToPdf provides an easy-to-use interface for concurrently printing HTML to PDF on iOS and macOS.
 
 ## Features
 
@@ -11,7 +11,7 @@ HtmlToPdf provides an easy-to-use interface for printing HTML to PDF on iOS and 
 
 ## Performance
 
-The package includes a test that prints 1000 html strings to pdfs in 11 seconds.
+The package includes a test that prints 1000 HTML strings to PDFs in 11 seconds.
 
 ```swift
 @Test func collection() async throws {
@@ -57,7 +57,7 @@ try await [
 
 Optionally, you can invoke an overload that returns an ``AsyncStream<URL>`` that yields the URL of each printed PDF.
 > [!NOTE] 
-> it is required to include the ``AsyncStream`` in the variable declaration.
+> You need to include the AsyncStream type in the variable declaration, otherwise the return value will be Void.
 
 ```swift
 let directory = URL(...)
