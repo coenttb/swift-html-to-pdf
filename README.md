@@ -61,7 +61,7 @@ Optionally, you can invoke an overload that returns an ``AsyncStream<URL>`` that
 
 ```swift
 let directory = URL(...)
-let urls: **AsyncStream** = try await [
+let urls: AsyncStream = try await [
     html,
     html,
     html,
