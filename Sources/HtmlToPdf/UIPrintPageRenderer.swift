@@ -11,41 +11,6 @@ import Foundation
 import UIKit
 import WebKit
 
-extension Sequence<Document> {
-    /// Prints a sequence of ``Document``  to PDFs at the given directory.
-    ///
-    /// ## Example
-    /// ```swift
-    /// let documents = [
-    ///     Document(...),
-    ///     Document(...),
-    ///     Document(...),
-    ///     ...
-    /// ]
-    /// try await documents.print(to: .downloadsDirectory)
-    /// ```
-    ///
-    /// - Parameters:
-    ///   - configuration: The configuration that the pdfs will use.
-    ///   - createDirectories: If true, the function will call FileManager.default.createDirectory for each document's directory.
-    ///
-    public func print(
-        configuration: PDFConfiguration,
-        createDirectories: Bool = true
-    ) async throws {
-        await withThrowingTaskGroup(of: Void.self) { taskGroup in
-            for document in self {
-                taskGroup.addTask {
-                    if createDirectories {
-                        try FileManager.default.createDirectory(at: document.fileUrl.deletingPathExtension().deletingLastPathComponent(), withIntermediateDirectories: true)
-                    }
-                    try await document.print(configuration: configuration)
-                }
-            }
-        }
-    }
-}
-
 extension Document {
     /// Prints a ``Document`` to PDF with the given configuration.
     ///
@@ -63,10 +28,13 @@ extension Document {
     /// - Throws: `Error` if the function cannot write to the document's fileUrl.
     @MainActor
     public func print(
-        configuration: PDFConfiguration
+        configuration: PDFConfiguration,
+        createDirectories: Bool = true
     ) async throws {
         
-        try FileManager.default.createDirectory(at: self.fileUrl.deletingPathExtension().deletingLastPathComponent(), withIntermediateDirectories: true)
+        if createDirectories {
+            try FileManager.default.createDirectory(at: self.fileUrl.deletingPathExtension().deletingLastPathComponent(), withIntermediateDirectories: true)
+        }
         
         let renderer = UIPrintPageRenderer()
         
@@ -126,3 +94,5 @@ extension UIEdgeInsets {
 }
 
 #endif
+
+

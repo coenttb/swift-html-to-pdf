@@ -7,6 +7,70 @@
 
 import Foundation
 
+/// A model of a document that will be printed to a PDF.
+///
+/// ## Example
+/// ```swift
+/// let document = Document(
+///     url: URL(...),
+///     html: "..."
+/// )
+/// ```
+///
+/// - Parameters:
+///   - url: The url at which to print the document.
+///   - html: The String representing the HTML that will be printed.
+///
+public struct Document: Sendable {
+    let fileUrl: URL
+    let html: String
+    
+    public init(
+        fileUrl: URL,
+        html: String
+    ) {
+        self.fileUrl = fileUrl
+        self.html = html
+    }
+}
+
+extension Sequence<Document> {
+    /// Prints a sequence of ``Document``  to PDFs at the given directory.
+    ///
+    /// ## Example
+    /// ```swift
+    /// let documents = [
+    ///     Document(...),
+    ///     Document(...),
+    ///     Document(...),
+    ///     ...
+    /// ]
+    /// try await documents.print(to: .downloadsDirectory)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - configuration: The configuration that the pdfs will use.
+    ///   - createDirectories: If true, the function will call FileManager.default.createDirectory for each document's directory.
+    ///
+    ///
+    public func print(
+        configuration: PDFConfiguration,
+        createDirectories: Bool = true
+    ) async throws {
+        try await withThrowingTaskGroup(of: Void.self) { taskGroup in
+            for document in self {
+                taskGroup.addTask {
+                    try await document.print(
+                        configuration: configuration,
+                        createDirectories: createDirectories
+                    )
+                }
+                try await taskGroup.waitForAll()
+            }
+        }
+    }
+}
+
 extension String {
     /// Prints a single html string to a PDF at the given URL, with the given margins.
     ///
@@ -27,9 +91,14 @@ extension String {
     @MainActor
     public func print(
         to fileUrl: URL,
-        configuration: PDFConfiguration
+        configuration: PDFConfiguration = .a4,
+        createDirectories: Bool = true
     ) async throws {
-        try await Document(fileUrl: fileUrl, html: self).print(configuration: configuration)
+        try await Document(fileUrl: fileUrl, html: self)
+            .print(
+                configuration: configuration,
+                createDirectories: createDirectories
+            )
     }
 }
 
@@ -56,17 +125,21 @@ extension String {
     public func print(
         title: String,
         to directory: URL,
-        configuration: PDFConfiguration
+        configuration: PDFConfiguration = .a4,
+        createDirectories: Bool = true
     ) async throws {
         try await Document(
             fileUrl: directory.appendingPathComponent(title).appendingPathExtension("pdf"),
             html: self
-        ).print(configuration: configuration)
+        ).print(
+            configuration: configuration,
+            createDirectories: createDirectories
+        )
     }
 }
 
 extension Sequence<String> {
-    /// Prints a collection of String to PDF's at the given directory.
+    /// Prints a collection of String to PDFs.
     ///
     /// ## Example
     /// ```swift
@@ -102,37 +175,10 @@ extension Sequence<String> {
             .print(
                 configuration: configuration,
                 createDirectories: createDirectories
-                
             )
     }
 }
 
-/// A model of a document that will be printed to a PDF.
-///
-/// ## Example
-/// ```swift
-/// let document = Document(
-///     url: URL(...),
-///     html: "..."
-/// )
-/// ```
-///
-/// - Parameters:
-///   - url: The url at which to print the document.
-///   - html: The String representing the HTML that will be printed.
-///
-public struct Document: Sendable {
-    let fileUrl: URL
-    let html: String
-
-    public init(
-        fileUrl: URL,
-        html: String
-    ) {
-        self.fileUrl = fileUrl
-        self.html = html
-    }
-}
 
 /// The configurations used to print to PDF
 ///
@@ -147,16 +193,16 @@ public struct PDFConfiguration: Sendable {
     let paperSize: CGSize
     let baseURL: URL?
     let orientation: PDFConfiguration.Orientation
-
-//    public init(
-//        margins: EdgeInsets,
-//        paperSize: CGSize = .paperSize(),
-//        baseURL: URL? = nil
-//    ) {
-//        self.paperSize = paperSize
-//        self.margins = margins
-//        self.baseURL = baseURL
-//    }
+    
+    //    public init(
+    //        margins: EdgeInsets,
+    //        paperSize: CGSize = .paperSize(),
+    //        baseURL: URL? = nil
+    //    ) {
+    //        self.paperSize = paperSize
+    //        self.margins = margins
+    //        self.baseURL = baseURL
+    //    }
     
     public init(
         margins: EdgeInsets,
@@ -198,7 +244,7 @@ public struct EdgeInsets: Sendable {
     let left: CGFloat
     let bottom: CGFloat
     let right: CGFloat
-
+    
     public init(top: CGFloat, left: CGFloat, bottom: CGFloat, right: CGFloat) {
         self.top = top
         self.left = left
@@ -223,3 +269,4 @@ extension CGSize {
         CGSize(width: 595.22, height: 841.85)
     }
 }
+

@@ -9,7 +9,11 @@ import Foundation
 import HtmlToPdf
 
 extension URL {
-    static func output(id: UUID = .init()) -> Self {
+//    static func output() -> Self {
+//        FileManager.default.temporaryDirectory.appendingPathComponent("html-to-pdf").appendingPathComponent(UUID().uuidString)
+//    }
+    
+    static func output(id: UUID = UUID()) -> Self {
         FileManager.default.temporaryDirectory.appendingPathComponent("html-to-pdf").appendingPathComponent(id.uuidString)
     }
 
@@ -24,11 +28,6 @@ extension URL {
     }
 }
 
-extension URL {
-    func createDirectories() throws {
-        try FileManager.default.createDirectory(at: self, withIntermediateDirectories: true, attributes: nil)
-    }
-}
 
 extension FileManager {
     func removeItems(at url: URL) throws {

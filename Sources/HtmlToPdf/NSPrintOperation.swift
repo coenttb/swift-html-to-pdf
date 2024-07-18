@@ -41,7 +41,7 @@ extension Document {
 }
 
 extension Sequence<Document> {
-    /// Prints ``Document``s  to PDF's at the given directory.
+    /// Prints ``Document``s  to PDFs at the given directory.
     ///
     /// ## Example
     /// ```swift
@@ -68,10 +68,11 @@ extension Sequence<Document> {
             for document in self {
                 taskGroup.addTask {
                     let webView = try await WebViewPool.shared.acquireWithRetry()
-                    if createDirectories {
-                        try FileManager.default.createDirectory(at: document.fileUrl.deletingPathExtension().deletingLastPathComponent(), withIntermediateDirectories: true)
-                    }
-                    try await document.print(configuration: configuration, using: webView)
+                    try await document.print(
+                        configuration: configuration,
+                        createDirectories: createDirectories,
+                        using: webView
+                    )
                     await WebViewPool.shared.release(webView)
                 }
                 try await taskGroup.waitForAll()
@@ -82,8 +83,9 @@ extension Sequence<Document> {
 
 extension Document {
     @MainActor
-    internal func print(
+    fileprivate func print(
         configuration: PDFConfiguration,
+        createDirectories: Bool = true,
         using webView: WKWebView = WKWebView(frame: .zero)
     ) async throws {
         
@@ -91,6 +93,10 @@ extension Document {
             outputURL: self.fileUrl,
             configuration: configuration
         )
+        
+        if createDirectories {
+            try FileManager.default.createDirectory(at: self.fileUrl.deletingPathExtension().deletingLastPathComponent(), withIntermediateDirectories: true)
+        }
         
         webView.navigationDelegate = webViewNavigationDelegate
         
