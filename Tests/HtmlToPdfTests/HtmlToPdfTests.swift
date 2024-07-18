@@ -227,7 +227,7 @@ struct Local {
     @Test() func collection() async throws {
         let title = "collection"
         let output = URL.localHtmlToPdf.appendingPathComponent(title)
-        let count = 10
+        let count = 300
         
         try await [String].init(repeating: htmlString, count: count)
             .print(to: output)

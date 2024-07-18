@@ -9,6 +9,37 @@
 import Foundation
 import WebKit
 
+extension Document {
+    /// Prints a ``Document`` to PDF with the given configuration.
+    ///
+    /// This function is more convenient when you have a directory and just want to title the PDF and save it to the directory.
+    ///
+    /// ## Example
+    /// ```swift
+    /// try await Document.init(...)
+    ///     .print(configuration: .a4)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - configuration: The configuration that the PDFs will use.
+    ///   - processorCount: In allmost all circumstances you can omit this parameter.
+    ///   - createDirectories: If true, the function will call FileManager.default.createDirectory for each document's directory.
+    ///
+    /// - Throws: `Error` if the function cannot write to the document's fileUrl.
+    @MainActor
+    public func print(
+        configuration: PDFConfiguration,
+        processorCount: Int = ProcessInfo.processInfo.activeProcessorCount,
+        createDirectories: Bool = true
+    ) async throws {
+        try await [self].print(
+            configuration: configuration,
+            processorCount: processorCount,
+            createDirectories: createDirectories
+        )
+    }
+}
+
 extension Sequence<Document> {
     /// Prints ``Document``s  to PDF's at the given directory.
     ///
@@ -25,6 +56,7 @@ extension Sequence<Document> {
     /// - Parameters:
     ///   - configuration: The configuration that the PDFs will use.
     ///   - processorCount: In allmost all circumstances you can omit this parameter.
+    ///   - createDirectories: If true, the function will call FileManager.default.createDirectory for each document's directory.
     ///
     
     public func print(
@@ -45,15 +77,6 @@ extension Sequence<Document> {
                 try await taskGroup.waitForAll()
             }
         }
-    }
-}
-
-extension Document {
-    @MainActor
-    public func print(
-        configuration: PDFConfiguration
-    ) async throws {
-        try await [self].print(configuration: configuration)
     }
 }
 
@@ -143,8 +166,7 @@ class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
             
             webView.frame = .init(origin: .zero, size: configuration.paperSize)
             
-            let printOperation = webView.printOperation(with: .pdf(url: outputURL, configuration: configuration))
-            
+            let printOperation = webView.printOperation(with: .pdf(jobSavingURL: outputURL, configuration: configuration))
             printOperation.showsPrintPanel = false
             printOperation.showsProgressPanel = false
             printOperation.canSpawnSeparateThread = true
@@ -155,6 +177,15 @@ class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
                 didRun: #selector(PrintDelegate.printOperationDidRun(_:success:contextInfo:)),
                 contextInfo: nil
             )
+        }
+    }
+}
+
+extension NSPrintInfo.PaperOrientation {
+    init(orientation: PDFConfiguration.Orientation) {
+        self = switch orientation {
+        case .landscape: .landscape
+        case .portrait: .portrait
         }
     }
 }
@@ -201,43 +232,60 @@ extension CGSize {
     }
 }
 
-public extension NSPrintInfo {
-    static func pdf(
-        url: URL,
-        configuration: PDFConfiguration
-    ) -> NSPrintInfo {
-        
-        .pdf(
-            url: url,
-            paperSize: configuration.paperSize,
-            topMargin: configuration.margins.top,
-            bottomMargin: configuration.margins.bottom,
-            leftMargin: configuration.margins.left,
-            rightMargin: configuration.margins.right
-        )
-    }
-    
-    static func pdf(
-        url: URL,
-        paperSize: CGSize = NSPrintInfo.shared.paperSize,
-        topMargin: CGFloat = 36,
-        bottomMargin: CGFloat = 36,
-        leftMargin: CGFloat = 36,
-        rightMargin: CGFloat = 36
-    ) -> NSPrintInfo {
-        NSPrintInfo(
+extension NSPrintInfo {
+    static func pdf(jobSavingURL: URL, configuration: PDFConfiguration) -> NSPrintInfo {
+        return NSPrintInfo(
             dictionary: [
                 .jobDisposition: NSPrintInfo.JobDisposition.save,
-                .jobSavingURL: url,
+                .jobSavingURL: jobSavingURL,
                 .allPages: true,
-                .topMargin: topMargin,
-                .bottomMargin: bottomMargin,
-                .leftMargin: leftMargin,
-                .rightMargin: rightMargin,
-                .paperSize: paperSize
+                .topMargin: configuration.margins.top,
+                .bottomMargin: configuration.margins.bottom,
+                .leftMargin: configuration.margins.left,
+                .rightMargin: configuration.margins.right,
+                .paperSize: configuration.paperSize,
+                .verticalPagination: NSNumber(value: NSPrintInfo.PaginationMode.automatic.rawValue),
             ]
         )
     }
 }
+
+//public extension NSPrintInfo {
+//    static func pdf(
+//        jobSavingURL: URL,
+//        configuration: PDFConfiguration
+//    ) -> NSPrintInfo {
+//        .pdf(
+//            url: jobSavingURL,
+//            paperSize: configuration.paperSize,
+//            topMargin: configuration.margins.top,
+//            bottomMargin: configuration.margins.bottom,
+//            leftMargin: configuration.margins.left,
+//            rightMargin: configuration.margins.right
+//        )
+//    }
+//    
+//    static func pdf(
+//        url: URL,
+//        paperSize: CGSize = NSPrintInfo.shared.paperSize,
+//        topMargin: CGFloat = 36,
+//        bottomMargin: CGFloat = 36,
+//        leftMargin: CGFloat = 36,
+//        rightMargin: CGFloat = 36
+//    ) -> NSPrintInfo {
+//        NSPrintInfo(
+//            dictionary: [
+//                .jobDisposition: NSPrintInfo.JobDisposition.save,
+//                .jobSavingURL: url,
+//                .allPages: true,
+//                .topMargin: topMargin,
+//                .bottomMargin: bottomMargin,
+//                .leftMargin: leftMargin,
+//                .rightMargin: rightMargin,
+//                .paperSize: paperSize
+//            ]
+//        )
+//    }
+//}
 
 #endif

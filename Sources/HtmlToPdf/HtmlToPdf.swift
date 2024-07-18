@@ -82,12 +82,13 @@ extension Sequence<String> {
     ///   - directory: The directory at which to print the documents.
     ///   - configuration: The configuration that the PDFs will use.
     ///   - fileName: A closure that, given an Int that represents the index of the String in the collection, returns a fileName. Defaults to just the Index + 1.
-    ///   - processorCount: In allmost all circumstances you can omit this parameter.
+    ///   - createDirectories: If true, the function will call FileManager.default.createDirectory for each document's directory.
     ///
     public func print(
         to directory: URL,
         configuration: PDFConfiguration = .a4,
-        filename: (Int) -> String = { index in "\(index + 1)" }
+        filename: (Int) -> String = { index in "\(index + 1)" },
+        createDirectories: Bool = true
     ) async throws {
         try await self.enumerated()
             .map { (index, html) in
@@ -98,7 +99,11 @@ extension Sequence<String> {
                     html: html
                 )
             }
-            .print(configuration: configuration)
+            .print(
+                configuration: configuration,
+                createDirectories: createDirectories
+                
+            )
     }
 }
 
@@ -138,10 +143,46 @@ public struct Document: Sendable {
 ///   - baseURL: The base URL to use when the system resolves relative URLs within the HTML string of the PDF.
 ///
 public struct PDFConfiguration: Sendable {
-    let paperSize: CGSize
     let margins: EdgeInsets
+    let paperSize: CGSize
     let baseURL: URL?
+    let orientation: PDFConfiguration.Orientation
 
+//    public init(
+//        margins: EdgeInsets,
+//        paperSize: CGSize = .paperSize(),
+//        baseURL: URL? = nil
+//    ) {
+//        self.paperSize = paperSize
+//        self.margins = margins
+//        self.baseURL = baseURL
+//    }
+    
+    public init(
+        margins: EdgeInsets,
+        paperSize: CGSize = .paperSize(),
+        baseURL: URL? = nil,
+        orientation: PDFConfiguration.Orientation = .portrait
+    ) {
+        self.paperSize = paperSize
+        self.margins = margins
+        self.baseURL = baseURL
+        self.orientation = orientation
+    }
+}
+
+
+extension PDFConfiguration {
+    
+    public enum Orientation: Sendable {
+        case landscape
+        case portrait
+    }
+    
+    public static var a4: PDFConfiguration {
+        .a4(margins: .a4)
+    }
+    
     var printableRect: CGRect {
         .init(
             x: margins.left,
@@ -149,22 +190,6 @@ public struct PDFConfiguration: Sendable {
             width: paperSize.width - margins.left - margins.right,
             height: paperSize.height - margins.top - margins.bottom
         )
-    }
-
-    public init(
-        margins: EdgeInsets,
-        paperSize: CGSize = .paperSize(),
-        baseURL: URL? = nil
-    ) {
-        self.paperSize = paperSize
-        self.margins = margins
-        self.baseURL = baseURL
-    }
-}
-
-extension PDFConfiguration {
-    public static var a4: PDFConfiguration {
-        .a4(margins: .a4)
     }
 }
 
