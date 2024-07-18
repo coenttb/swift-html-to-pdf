@@ -10,6 +10,7 @@ HtmlToPdf provides an easy-to-use interface for printing HTML to PDF on iOS and 
 - Swift 6 language mode enabled
 
 ## Performance
+
 The package includes a test that prints 1000 html strings to pdfs in 11 seconds.
 
 ```swift
@@ -24,7 +25,6 @@ The package includes a test that prints 1000 html strings to pdfs in 11 seconds.
     [...]
 }
 ```
-
 
 ## Examples
 
@@ -53,7 +53,7 @@ try await [
 .print(to: directory)
 ```
 
-## Examples
+### ``AsyncStream<URL>``
 
 Optionally, you can invoke an overload that returns an ``AsyncStream<URL>`` that yields the URL of each printed PDF.
 > [!NOTE] 
