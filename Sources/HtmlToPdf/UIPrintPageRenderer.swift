@@ -65,8 +65,14 @@ extension Document {
     public func print(
         configuration: PDFConfiguration
     ) async throws {
-        let renderer = PrintPageRenderer()
-
+        
+        try FileManager.default.createDirectory(at: self.fileUrl.deletingPathExtension().deletingLastPathComponent(), withIntermediateDirectories: true)
+        
+        let renderer = PrintPageRenderer(
+            header: .test,
+            footer: .pageNumbers
+        )
+        
         let printFormatter = UIMarkupTextPrintFormatter(markupText: self.html)
 
         renderer.addPrintFormatter(printFormatter, startingAtPageAt: 0)
@@ -93,59 +99,86 @@ extension Document {
     }
 }
 
-class PrintPageRenderer: UIPrintPageRenderer {
-    init(
-        headerHeight: CGFloat = 50.0,
-        footerHeight: CGFloat = 30.0
-    ) {
-        super.init()
-        self.headerHeight = headerHeight
-        self.footerHeight = footerHeight
-    }
+public struct Header: Sendable {
+    let drawHeaderForPage: @MainActor @Sendable (_ renderer: PrintPageRenderer, _ pageIndex: Int, _ headerRect: CGRect) -> Void
     
-    override func drawHeaderForPage(at pageIndex: Int, in headerRect: CGRect) {
-        // Define your header text
-        let headerText = "This is the Header"
+    public static let test: Header = .init { renderer, pageIndex, headerRect in
+        let headerText = "test"
+        
+        renderer.headerHeight = 300
         
         // Set up the attributes for the header text
         let textAttributes: [NSAttributedString.Key: Any] = [
-//            .font: UIFont.systemFont(ofSize: 14),
-            .font: UIFont.preferredFont(forTextStyle: .footnote),
+            .font: UIFont.systemFont(ofSize: 12),
             .foregroundColor: UIColor.lightGray
         ]
         
-        // Calculate the size of the header text
         let textSize = (headerText as NSString).size(withAttributes: textAttributes)
-        
-        // Calculate the position
-        let textX = headerRect.midX - textSize.width / 2
-        let textY = headerRect.midY - textSize.height / 2
-        
-        // Draw the header text
-        (headerText as NSString).draw(at: CGPoint(x: textX, y: textY), withAttributes: textAttributes)
-    }
-//
-//    override func drawFooterForPage(at pageIndex: Int, in footerRect: CGRect) {
-//        // Define your footer text
-//        let footerText = "Page \(pageIndex + 1)"
-//
-//        // Set up the attributes for the footer text
-//        let textAttributes: [NSAttributedString.Key: Any] = [
-//            .font: UIFont.systemFont(ofSize: 12),
-//            .foregroundColor: UIColor.gray
-//        ]
-//
-//        // Calculate the size of the footer text
-//        let textSize = (footerText as NSString).size(withAttributes: textAttributes)
-//
-//        // Calculate the position
-//        let textX = footerRect.midX - textSize.width / 2
-//        let textY = footerRect.midY - textSize.height / 2
-//
-//        // Draw the footer text
-//        (footerText as NSString).draw(at: CGPoint(x: textX, y: textY), withAttributes: textAttributes)
-//    }
 
+        (headerText as NSString).draw(
+            at: CGPoint(
+                x: headerRect.midX - textSize.width / 2,
+                y: headerRect.midY - textSize.height / 2
+            ),
+            withAttributes: textAttributes
+        )
+    }
+    
+}
+
+public struct Footer: Sendable {
+    let drawFooterForPage: @MainActor @Sendable (_ renderer: PrintPageRenderer, _ pageIndex: Int, _ footerRect: CGRect) -> Void
+    
+    public static let pageNumbers: Footer = .init { renderer, pageIndex, footerRect in
+        
+        renderer.footerHeight = 300
+        
+        let footerText = "\(pageIndex + 1) - \(renderer.numberOfPages)"
+        
+        let textAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 10),
+            .foregroundColor: UIColor.lightGray
+        ]
+        
+        let textSize = (footerText as NSString).size(withAttributes: textAttributes)
+        
+        (footerText as NSString).draw(
+            at: CGPoint(
+                x: footerRect.midX - textSize.width / 2,
+                y: footerRect.midY - textSize.height / 2
+            ),
+            withAttributes: textAttributes
+        )
+    }
+}
+
+class PrintPageRenderer: UIPrintPageRenderer {
+
+    var header: Header?
+    var footer: Footer?
+    
+    
+    init(
+        header: Header? = nil,
+        footer: Footer? = nil
+    ) {
+        self.header = header
+        self.footer = footer
+        
+        super.init()
+        self.footerHeight = footer != nil ? 1 : 0
+        self.headerHeight = header != nil ? 1 : 0
+    }
+    
+    override func drawHeaderForPage(at pageIndex: Int, in headerRect: CGRect) {
+        self.header?.drawHeaderForPage(self, pageIndex, headerRect)
+    }
+
+    override func drawFooterForPage(at pageIndex: Int, in footerRect: CGRect) {
+       
+        self.footer?.drawFooterForPage(self, pageIndex, footerRect)
+        
+    }
 }
 
 extension PDFConfiguration {

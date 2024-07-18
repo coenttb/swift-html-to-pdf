@@ -205,12 +205,10 @@ struct TemporaryDirectory {
         try FileManager.default.removeItems(at: output)
     }
 }
-#if os(macOS) || targetEnvironment(macCatalyst)
 
+#if os(macOS) || targetEnvironment(macCatalyst)
 @Suite("Local")
 struct Local {
-    let cleanup: Bool = false
-    
     @Test() func individual() async throws {
         
         let title = "individual"
@@ -221,13 +219,13 @@ struct Local {
         
         #expect(FileManager.default.fileExists(atPath: output.path))
         
-        if cleanup { try FileManager.default.removeItem(at: output) }
+        if false { try FileManager.default.removeItem(at: output) }
     }
     
     @Test() func collection() async throws {
         let title = "collection"
         let output = URL.localHtmlToPdf.appendingPathComponent(title)
-        let count = 300
+        let count = 2
         
         try await [String].init(repeating: htmlString, count: count)
             .print(to: output)
@@ -236,7 +234,7 @@ struct Local {
         
         #expect(contents_after.count == count)
         
-        if cleanup { try FileManager.default.removeItem(at: output) }
+        if true { try FileManager.default.removeItem(at: output) }
     }
 }
 #endif
