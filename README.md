@@ -9,30 +9,11 @@ HtmlToPdf provides an easy-to-use interface for concurrently printing HTML to PD
 - Customize margins for PDF documents.
 - Swift 6 language mode enabled
 
-## Performance
-
-The package includes a test that prints 1000 HTML strings to PDFs in ~2.6 seconds (using ``UIPrintPageRenderer`` on iOS or Mac Catalyst) or ~12 seconds (using ``NSPrintOperation`` on MacOS).
-
-```swift
-@Test func collection() async throws {
-    [...]
-    let count = 1_000
-    try await [String].init(
-        repeating: "<html><body><h1>Hello, World 1!</h1></body></html>",
-        count: count
-    )
-    .print(to: URL(...))
-    [...]
-}
-```
-
 ## Examples
 
 Print to a file url:
 ```swift
-let fileUrl = URL(...)
-let html = "<html><body><h1>Hello, World 1!</h1></body></html>"
-try await html.print(to: fileUrl)
+try await "<html><body><h1>Hello, World 1!</h1></body></html>".print(to: URL(...))
 ```
 Print to a directory with a file title.
 ```swift
@@ -51,6 +32,23 @@ try await [
     ....
 ]
 .print(to: directory)
+```
+
+## Performance
+
+The package includes a test that prints 1000 HTML strings to PDFs in ~2.6 seconds (using ``UIPrintPageRenderer`` on iOS or Mac Catalyst) or ~12 seconds (using ``NSPrintOperation`` on MacOS).
+
+```swift
+@Test func collection() async throws {
+    [...]
+    let count = 1_000
+    try await [String].init(
+        repeating: "<html><body><h1>Hello, World 1!</h1></body></html>",
+        count: count
+    )
+    .print(to: URL(...))
+    [...]
+}
 ```
 
 ### ``AsyncStream<URL>``
