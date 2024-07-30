@@ -58,7 +58,7 @@ extension Sequence<Document> {
     ///   - processorCount: In allmost all circumstances you can omit this parameter.
     ///   - createDirectories: If true, the function will call FileManager.default.createDirectory for each document's directory.
     ///
-    
+
     public func print(
         configuration: PDFConfiguration,
         processorCount: Int = ProcessInfo.processInfo.activeProcessorCount,
@@ -88,18 +88,18 @@ extension Document {
         createDirectories: Bool = true,
         using webView: WKWebView = WKWebView(frame: .zero)
     ) async throws {
-        
+
         let webViewNavigationDelegate = WebViewNavigationDelegate(
             outputURL: self.fileUrl,
             configuration: configuration
         )
-        
+
         if createDirectories {
             try FileManager.default.createDirectory(at: self.fileUrl.deletingPathExtension().deletingLastPathComponent(), withIntermediateDirectories: true)
         }
-        
+
         webView.navigationDelegate = webViewNavigationDelegate
-        
+
         await withCheckedContinuation { continuation in
             let printDelegate = PrintDelegate {
                 continuation.resume()
@@ -114,19 +114,19 @@ extension Document {
 class WebViewPool {
     private var pool: [WKWebView]
     private let semaphore: DispatchSemaphore
-    
+
     private init(size: Int) {
         self.pool = (0..<size).map { _ in
             WKWebView(frame: .zero)
         }
         self.semaphore = DispatchSemaphore(value: size)
     }
-    
+
     func acquire() -> WKWebView? {
         semaphore.wait()
         return pool.isEmpty ? nil : pool.removeFirst()
     }
-    
+
     func acquireWithRetry(retries: Int = 8, delay: TimeInterval = 0.2) async throws -> WKWebView {
         for _ in 0..<retries {
             if let webView = self.acquire() {
@@ -141,7 +141,7 @@ class WebViewPool {
         defer { semaphore.signal() }
         pool.append(webView)
     }
-    
+
     static let shared: WebViewPool = .init(size: ProcessInfo.processInfo.activeProcessorCount)
 }
 
@@ -154,9 +154,9 @@ extension WebViewPool {
 class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
     private let outputURL: URL
     var printDelegate: PrintDelegate?
-    
+
     private let configuration: PDFConfiguration
-    
+
     init(
         outputURL: URL,
         onFinished: (@Sendable () -> Void)? = nil,
@@ -166,17 +166,17 @@ class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
         self.configuration = configuration
         self.printDelegate = onFinished.map(PrintDelegate.init)
     }
-    
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         Task { @MainActor [configuration, outputURL, printDelegate] in
-            
+
             webView.frame = .init(origin: .zero, size: configuration.paperSize)
-            
+
             let printOperation = webView.printOperation(with: .pdf(jobSavingURL: outputURL, configuration: configuration))
             printOperation.showsPrintPanel = false
             printOperation.showsProgressPanel = false
             printOperation.canSpawnSeparateThread = true
-            
+
             printOperation.runModal(
                 for: webView.window ?? NSWindow(),
                 delegate: printDelegate,
@@ -197,13 +197,13 @@ extension NSPrintInfo.PaperOrientation {
 }
 
 class PrintDelegate: @unchecked Sendable {
-    
+
     var onFinished: @Sendable () -> Void
-    
+
     init(onFinished: @Sendable @escaping () -> Void) {
         self.onFinished = onFinished
     }
-    
+
     @objc func printOperationDidRun(_ printOperation: NSPrintOperation, success: Bool, contextInfo: UnsafeMutableRawPointer?) {
         self.onFinished()
     }
@@ -250,13 +250,13 @@ extension NSPrintInfo {
                 .leftMargin: configuration.margins.left,
                 .rightMargin: configuration.margins.right,
                 .paperSize: configuration.paperSize,
-                .verticalPagination: NSNumber(value: NSPrintInfo.PaginationMode.automatic.rawValue),
+                .verticalPagination: NSNumber(value: NSPrintInfo.PaginationMode.automatic.rawValue)
             ]
         )
     }
 }
 
-//public extension NSPrintInfo {
+// public extension NSPrintInfo {
 //    static func pdf(
 //        jobSavingURL: URL,
 //        configuration: PDFConfiguration
@@ -292,6 +292,6 @@ extension NSPrintInfo {
 //            ]
 //        )
 //    }
-//}
+// }
 
 #endif

@@ -10,7 +10,7 @@ import HtmlToPdf
 import Testing
 
 extension URL {
-    
+
     static func output(id: UUID = UUID()) -> Self {
         FileManager.default.temporaryDirectory.appendingPathComponent("html-to-pdf").appendingPathComponent(id.uuidString)
     }
@@ -25,7 +25,6 @@ extension URL {
         #endif
     }
 }
-
 
 extension FileManager {
     func removeItems(at url: URL) throws {
@@ -46,7 +45,6 @@ extension AsyncStream<URL> {
     }
 }
 
-
 extension String {
     static let html = """
     <html>
@@ -55,7 +53,7 @@ extension String {
         </body>
     </html>
     """
-    
+
     static let html2 = """
     <html>
         <body>
@@ -84,6 +82,3 @@ extension String {
     """
 
 }
-
-
-

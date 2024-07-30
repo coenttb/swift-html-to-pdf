@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension Sequence<Document> where Self: Sendable  {
+extension Sequence<Document> where Self: Sendable {
     /// Prints a sequence of ``Document``  to PDFs at the given directory.
     ///
     /// ## Example
@@ -51,7 +51,6 @@ extension Sequence<Document> where Self: Sendable  {
         }
     }
 }
-
 
 extension Sequence<String> {
     /// Prints a collection of String to PDFs at the given directory and returns .

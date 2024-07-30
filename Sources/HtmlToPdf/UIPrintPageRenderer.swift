@@ -31,13 +31,13 @@ extension Document {
         configuration: PDFConfiguration,
         createDirectories: Bool = true
     ) async throws {
-        
+
         if createDirectories {
             try FileManager.default.createDirectory(at: self.fileUrl.deletingPathExtension().deletingLastPathComponent(), withIntermediateDirectories: true)
         }
-        
+
         let renderer = UIPrintPageRenderer()
-        
+
         let printFormatter = UIMarkupTextPrintFormatter(markupText: self.html)
 
         renderer.addPrintFormatter(printFormatter, startingAtPageAt: 0)
@@ -63,7 +63,6 @@ extension Document {
         try pdfData.write(to: self.fileUrl)
     }
 }
-
 
 extension PDFConfiguration {
     public static func a4(margins: EdgeInsets) -> PDFConfiguration {
@@ -94,5 +93,3 @@ extension UIEdgeInsets {
 }
 
 #endif
-
-
