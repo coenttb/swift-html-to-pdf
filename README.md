@@ -19,7 +19,7 @@ Print to a directory with a file title.
 ```swift
 let directory = URL(...)
 let html = "<html><body><h1>Hello, World 1!</h1></body></html>"
-try await  html.print(title: "file title", to: directory)
+try await html.print(title: "file title", to: directory)
 ```
 
 Print a collection to a directory.
