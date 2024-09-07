@@ -12,6 +12,7 @@ import UIKit
 import WebKit
 
 extension Document {
+    
     /// Prints a ``Document`` to PDF with the given configuration.
     ///
     /// This function is more convenient when you have a directory and just want to title the PDF and save it to the directory.
@@ -31,19 +32,64 @@ extension Document {
         configuration: PDFConfiguration,
         createDirectories: Bool = true
     ) async throws {
+        
+        if html.containsImages() {
+            try await DocumentWKRenderer(
+                document: self,
+                configuration: configuration,
+                createDirectories: createDirectories
+            ).print()
+            
+        } else {
+            try await print(
+                configuration: configuration,
+                createDirectories: createDirectories,
+                printFormatter: UIMarkupTextPrintFormatter(markupText: self.html)
+            )
+        }
+    }
+}
 
+extension String {
+    
+    /// Determines if the HTML string contains any `<img>` tags.
+    /// - Returns: A boolean indicating whether the HTML contains images.
+    func containsImages() -> Bool {
+        let imgRegex = "<img\\s+[^>]*src\\s*=\\s*['\"]([^'\"]*)['\"][^>]*>"
+        
+        do {
+            let regex = try NSRegularExpression(pattern: imgRegex, options: .caseInsensitive)
+            let matches = regex.matches(in: self, options: [], range: NSRange(location: 0, length: self.utf16.count))
+            return !matches.isEmpty
+            
+        } catch {
+            Swift.print("Regex error: \(error.localizedDescription)")
+            return false
+        }
+    }
+}
+
+extension Document {
+    
+    /// Internal method to print the document using a custom UIPrintFormatter.
+    /// - Parameters:
+    ///   - configuration: The PDF configuration for printing.
+    ///   - createDirectories: Flag to create directories if they don't exist. Default is `true`.
+    ///   - printFormatter: The formatter used for printing the document content.
+    @MainActor
+    internal func print(
+        configuration: PDFConfiguration,
+        createDirectories: Bool = true,
+        printFormatter: UIPrintFormatter
+    ) async throws {
         if createDirectories {
             try FileManager.default.createDirectory(at: self.fileUrl.deletingPathExtension().deletingLastPathComponent(), withIntermediateDirectories: true)
         }
 
         let renderer = UIPrintPageRenderer()
-
-        let printFormatter = UIMarkupTextPrintFormatter(markupText: self.html)
-
         renderer.addPrintFormatter(printFormatter, startingAtPageAt: 0)
 
         let paperRect = CGRect(origin: .zero, size: configuration.paperSize)
-
         renderer.setValue(NSValue(cgRect: paperRect), forKey: "paperRect")
         renderer.setValue(NSValue(cgRect: configuration.printableRect), forKey: "printableRect")
 
@@ -61,6 +107,67 @@ extension Document {
         UIGraphicsEndPDFContext()
 
         try pdfData.write(to: self.fileUrl)
+    }
+}
+
+private class DocumentWKRenderer: NSObject, WKNavigationDelegate {
+    private var document: Document
+    private var configuration: PDFConfiguration!
+    private var createDirectories: Bool = true
+    
+    private var continuation: CheckedContinuation<Void, Error>?
+    var webView: WKWebView? = nil
+    
+    init(
+        document: Document,
+        configuration: PDFConfiguration!,
+        createDirectories: Bool
+    ) {
+        self.document = document
+        self.configuration = configuration
+        self.createDirectories = createDirectories
+    }
+    
+    @MainActor
+    public func print() async throws {
+        webView = WKWebView(frame: .zero)
+        webView?.navigationDelegate = self
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            self.continuation = continuation
+            webView?.loadHTMLString(document.html, baseURL: nil)
+        }
+    }
+    
+    
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        Task {
+            do {
+                try await document.print(
+                    configuration: configuration,
+                    createDirectories: createDirectories,
+                    printFormatter: webView.viewPrintFormatter()
+                )
+            } catch {
+                continuation?.resume(throwing: error)
+            }
+            await cleanup()
+            continuation?.resume(returning: ())
+        }
+    }
+    
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) {
+        Task {
+            await cleanup()
+            continuation?.resume(throwing: error)
+        }
+    }
+    
+    @MainActor
+    private func cleanup() {
+        webView?.navigationDelegate = nil
+        webView?.removeFromSuperview()
+        webView = nil
     }
 }
 
