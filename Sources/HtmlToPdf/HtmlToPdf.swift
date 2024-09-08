@@ -24,7 +24,7 @@ import Foundation
 public struct Document: Sendable {
     let fileUrl: URL
     let html: String
-
+    
     public init(
         fileUrl: URL,
         html: String
@@ -199,7 +199,7 @@ public struct PDFConfiguration: Sendable {
     let paperSize: CGSize
     let baseURL: URL?
     let orientation: PDFConfiguration.Orientation
-
+    
     //    public init(
     //        margins: EdgeInsets,
     //        paperSize: CGSize = .paperSize(),
@@ -209,7 +209,7 @@ public struct PDFConfiguration: Sendable {
     //        self.margins = margins
     //        self.baseURL = baseURL
     //    }
-
+    
     public init(
         margins: EdgeInsets,
         paperSize: CGSize = .paperSize(),
@@ -224,16 +224,16 @@ public struct PDFConfiguration: Sendable {
 }
 
 extension PDFConfiguration {
-
+    
     public enum Orientation: Sendable {
         case landscape
         case portrait
     }
-
+    
     public static var a4: PDFConfiguration {
         .a4(margins: .a4)
     }
-
+    
     var printableRect: CGRect {
         .init(
             x: margins.left,
@@ -249,7 +249,7 @@ public struct EdgeInsets: Sendable {
     let left: CGFloat
     let bottom: CGFloat
     let right: CGFloat
-
+    
     public init(top: CGFloat, left: CGFloat, bottom: CGFloat, right: CGFloat) {
         self.top = top
         self.left = left
