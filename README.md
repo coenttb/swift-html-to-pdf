@@ -78,7 +78,15 @@ for await url in urls {
 HtmlToPdf supports base64-encoded images out of the box.
 
 > [!Important]
-> You are responsible for encoding your images to base64.  
+> You are responsible for encoding your images to base64.
+
+### Example HTML
+The example below will correctly render the image in the HTML, assuming the `[...]` is replaced with a valid base64-encoded string.
+
+```swift
+"<html><body><h1>Hello, World 1!</h1><img src="data:image/png;charset=utf-8;base64, [...]" alt="imageDescription"></body></html>"
+   .print(to: URL(...))
+```
 
 > [!Tip]
 > You can use swift to load the image from a relative or absolute path and then convert them to base64.
