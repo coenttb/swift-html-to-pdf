@@ -82,7 +82,7 @@ HtmlToPdf supports base64-encoded images out of the box.
 
 > [!Tip]
 > You can use swift to load the image from a relative or absolute path and then convert them to base64.
-> Here's how you can achieve this using the convenience initializer on Image using `[coenttb/swift-html](https://www.github.com/coenttb/swift-html)` package:
+> Here's how you can achieve this using the convenience initializer on Image using [coenttb/swift-html](https://www.github.com/coenttb/swift-html) package:
 > ```
 > struct Example: HTML {
 >     var body: some HTML {
@@ -94,6 +94,7 @@ HtmlToPdf supports base64-encoded images out of the box.
 >     }
 > } 
 > ```
+> You can find the implementation of `Image.base64EncodedFromURL` [here](https://github.com/coenttb/swift-html/blob/main/Sources/HTML/Image.swift).
 
 
 
