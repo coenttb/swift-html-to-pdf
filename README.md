@@ -94,7 +94,7 @@ HtmlToPdf supports base64-encoded images out of the box.
 >     }
 > } 
 > ```
-> You can find the implementation of `Image.base64EncodedFromURL` [here](https://github.com/coenttb/swift-html/blob/main/Sources/HTML/Image.swift).
+> [Click here for the implementation of `Image.base64EncodedFromURL`](https://github.com/coenttb/swift-html/blob/main/Sources/HTML/Image.swift).
 
 
 
