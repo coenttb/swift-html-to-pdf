@@ -8,6 +8,7 @@ HtmlToPdf provides an easy-to-use interface for concurrently printing HTML to PD
 - Lightweight and fast: it can handle thousands of documents quickly.
 - Customize margins for PDF documents.
 - Swift 6 language mode enabled
+- And one more thing: easily print images in your PDFs!
 
 ## Examples
 
@@ -71,6 +72,30 @@ for await url in urls {
     Swift.print(url)
 }
 ```
+
+## Including Images in PDFs
+
+HtmlToPdf supports base64-encoded images out of the box.
+
+> [!Important]
+> You are responsible for encoding your images to base64.  
+
+> [!Tip]
+> You can use swift to load the image from a relative or absolute path and then convert them to base64.
+> Here's how you can achieve this using the convenience initializer on Image using `[coenttb/swift-html](https://www.github.com/coenttb/swift-html)` package:
+> ```
+> struct Example: HTML {
+>     var body: some HTML {
+>         [...]
+>         if let image = Image(base64EncodedFromURL: "path/to/your/image.jpg", description: "Description of the image") {
+>             image
+>         }
+>         [...]
+>     }
+> } 
+> ```
+
+
 
 ## Installation
 
