@@ -90,7 +90,7 @@ The example below will correctly render the image in the HTML, assuming the `[..
 
 > [!Tip]
 > You can use swift to load the image from a relative or absolute path and then convert them to base64.
-> Here's how you can achieve this using the convenience initializer on Image using [coenttb/swift-html](https://www.github.com/coenttb/swift-html) package:
+> Here's how you can achieve this using the convenience initializer on Image using [coenttb/swift-html](https://www.github.com/coenttb/swift-html):
 > ```
 > struct Example: HTML {
 >     var body: some HTML {
@@ -102,7 +102,7 @@ The example below will correctly render the image in the HTML, assuming the `[..
 >     }
 > } 
 > ```
-> [Click here for the implementation of `Image.base64EncodedFromURL`](https://github.com/coenttb/swift-html/blob/main/Sources/HTML/Image.swift).
+> [Click here for the implementation of `Image.init(base64EncodedFromURL:)`](https://github.com/coenttb/swift-html/blob/main/Sources/HTML/Image.swift), which shows how to encode an image to base64.
 
 
 
